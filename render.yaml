@@ -1,0 +1,42 @@
+# ================================================================
+# QUIZ ACADEMY — RENDER DEPLOYMENT CONFIG
+# Drop this file in your project root.
+# Connect your GitHub repo on render.com and it auto-deploys.
+# ================================================================
+
+services:
+  - type: web
+    name: quiz-academy
+    runtime: node
+    plan: free                        # free tier — spins down after 15 min inactivity
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/auth/config  # lightweight endpoint to keep service alive
+    autoDeploy: true                   # auto-deploy on every GitHub push
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # ── Set these in Render dashboard → Environment ──
+      # Never put real secrets in this file.
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: CLIENT_URL
+        sync: false   # set to https://your-app.onrender.com

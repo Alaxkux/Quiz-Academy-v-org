@@ -1,0 +1,32 @@
+# ── Environment ──
+.env
+.env.local
+.env.production
+
+# ── Node ──
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs ──
+logs/
+*.log
+
+# ── Build ──
+dist/
+build/
+
+# ── Misc ──
+*.zip
