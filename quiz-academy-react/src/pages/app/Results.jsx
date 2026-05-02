@@ -90,10 +90,11 @@ export default function Results() {
   const { user }  = useAuth()
   const { result, newAchievements = [] } = location.state || {}
 
-  if (!result) {
-    navigate('/dashboard', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (!result) navigate('/dashboard', { replace: true })
+  }, [result])
+
+  if (!result) return null
 
   const { percentage, score, total, points, xpEarned, timeTaken, category, isDailyChallenge, revealMode } = result
 

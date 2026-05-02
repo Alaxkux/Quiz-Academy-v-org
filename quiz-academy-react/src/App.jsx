@@ -61,9 +61,9 @@ export default function App() {
   const { init, loading } = useAuth()
 
   useEffect(() => {
-    // Apply theme before first paint
+    // Apply stored theme immediately on mount (before API call resolves)
     applyTheme(getStoredTheme())
-    // Initialize auth
+    // Initialize auth (fetches /me, sets user, sets loading:false)
     init()
   }, [])
 
@@ -104,29 +104,28 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPage />} />
 
       {/* ── Protected app routes ── */}
-      <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
-        <Route path="dashboard"   element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
-        <Route path="categories"  element={<Suspense fallback={<PageLoader />}><Categories /></Suspense>} />
-        <Route path="play"        element={<Suspense fallback={<PageLoader />}><Play /></Suspense>} />
-        <Route path="quiz/config" element={<Suspense fallback={<PageLoader />}><QuizConfig /></Suspense>} />
-        <Route path="quiz/active" element={<Suspense fallback={<PageLoader />}><QuizEngine /></Suspense>} />
-        <Route path="quiz/results" element={<Suspense fallback={<PageLoader />}><Results /></Suspense>} />
-        <Route path="quiz/review" element={<Suspense fallback={<PageLoader />}><Review /></Suspense>} />
-        <Route path="history"     element={<Suspense fallback={<PageLoader />}><History /></Suspense>} />
-        <Route path="leaderboard" element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
-        <Route path="achievements" element={<Suspense fallback={<PageLoader />}><Achievements /></Suspense>} />
-        <Route path="ai"          element={<Suspense fallback={<PageLoader />}><AIGenerator /></Suspense>} />
-        <Route path="builder"     element={<Suspense fallback={<PageLoader />}><CourseBuilder /></Suspense>} />
-        <Route path="brainstorm"  element={<Suspense fallback={<PageLoader />}><Brainstorm /></Suspense>} />
-        <Route path="profile"     element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
-        <Route path="settings"    element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
-        <Route path="planner"     element={<Suspense fallback={<PageLoader />}><StudyPlanner /></Suspense>} />
-        <Route path="users"       element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
-        <Route index element={<Navigate to="dashboard" replace />} />
+      <Route element={<RequireAuth><AppShell /></RequireAuth>}>
+        <Route path="/dashboard"   element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+        <Route path="/categories"  element={<Suspense fallback={<PageLoader />}><Categories /></Suspense>} />
+        <Route path="/play"        element={<Suspense fallback={<PageLoader />}><Play /></Suspense>} />
+        <Route path="/quiz/config" element={<Suspense fallback={<PageLoader />}><QuizConfig /></Suspense>} />
+        <Route path="/quiz/active" element={<Suspense fallback={<PageLoader />}><QuizEngine /></Suspense>} />
+        <Route path="/quiz/results" element={<Suspense fallback={<PageLoader />}><Results /></Suspense>} />
+        <Route path="/quiz/review" element={<Suspense fallback={<PageLoader />}><Review /></Suspense>} />
+        <Route path="/history"     element={<Suspense fallback={<PageLoader />}><History /></Suspense>} />
+        <Route path="/leaderboard" element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
+        <Route path="/achievements" element={<Suspense fallback={<PageLoader />}><Achievements /></Suspense>} />
+        <Route path="/ai"          element={<Suspense fallback={<PageLoader />}><AIGenerator /></Suspense>} />
+        <Route path="/builder"     element={<Suspense fallback={<PageLoader />}><CourseBuilder /></Suspense>} />
+        <Route path="/brainstorm"  element={<Suspense fallback={<PageLoader />}><Brainstorm /></Suspense>} />
+        <Route path="/profile"     element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
+        <Route path="/settings"    element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+        <Route path="/planner"     element={<Suspense fallback={<PageLoader />}><StudyPlanner /></Suspense>} />
+        <Route path="/users"       element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
       </Route>
 
       {/* ── Catch-all ── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }

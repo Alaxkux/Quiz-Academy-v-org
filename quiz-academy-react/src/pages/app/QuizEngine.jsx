@@ -75,6 +75,7 @@ export default function QuizEngine() {
   const [perQKey,     setPerQKey]     = useState(0) // key to reset per-Q timer on question change
   const timerRef  = useRef(null)
   const guardRef  = useRef({})
+  const expiredRef = useRef(false)
 
   // Resume if page reloaded mid-quiz
   useEffect(() => {
@@ -148,6 +149,7 @@ export default function QuizEngine() {
     if (!quiz) return
     const hasAnswer = quiz.answers[quiz.currentIndex] !== undefined
     if (!hasAnswer) return
+    expiredRef.current = false
 
     const result = nextQuestion()
     if (result === 'finish') {
@@ -164,11 +166,16 @@ export default function QuizEngine() {
 
   function handlePerQExpire() {
     if (!quiz) return
+    if (expiredRef.current) return   // guard against double-fire
+    expiredRef.current = true
     // Auto-record as skipped (-1) then move next
     if (quiz.answers[quiz.currentIndex] === undefined) {
       selectAnswer(-1)
     }
-    setTimeout(handleNext, 800)
+    setTimeout(() => {
+      expiredRef.current = false
+      handleNext()
+    }, 800)
   }
 
   function handleFinish() {
@@ -237,7 +244,7 @@ export default function QuizEngine() {
 
   return (
     <div
-      className="flex flex-col gap-3 max-w-2xl mx-auto w-full animate-fade-in"
+      className="flex flex-col gap-3 max-w-2xl mx-auto w-full animate-fade-in pb-24 md:pb-6"
       style={{ minHeight: '80vh' }}
     >
       {/* ── Topbar ── */}

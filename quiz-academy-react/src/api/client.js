@@ -1,4 +1,5 @@
 import axios from 'axios'
+import useAuthStore from '../store/authStore'
 
 const client = axios.create({
   baseURL: '/api',
@@ -13,15 +14,16 @@ client.interceptors.request.use(config => {
   return config
 })
 
-// Handle 401 — clear token and redirect to login
+// Handle 401 — clear token and reset store (no hard page reload)
 client.interceptors.response.use(
   res => res.data,
   err => {
-    const status = err.response?.status
+    const status  = err.response?.status
     const message = err.response?.data?.error || err.message || 'Request failed'
     if (status === 401) {
       localStorage.removeItem('qa_token')
-      window.location.href = '/login'
+      // Reset auth state via store — triggers React Router redirect, no hard reload
+      useAuthStore.setState({ user: null, notifications: [], loading: false, initialized: true })
     }
     return Promise.reject(new Error(message))
   }

@@ -342,11 +342,12 @@ router.post('/reset-password', authLimiter, async (req, res) => {
 
 module.exports = router;
 
-// ================================================================
-// CONFIG — exposes safe public config to frontend (e.g. Google Client ID)
-// ================================================================
+// CONFIG — exposes safe public config
 router.get('/config', (req, res) => {
   res.json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || null
   });
 });
+
+// IMPORTANT: export must be LAST
+module.exports = router;

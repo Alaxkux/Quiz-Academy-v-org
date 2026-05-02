@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, Plus, Upload } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
@@ -10,8 +10,15 @@ import Button from '../../components/ui/Button'
 
 export default function Categories() {
   const navigate          = useNavigate()
+  const [searchParams]    = useSearchParams()
   const { user }          = useAuth()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(searchParams.get('q') || '')
+
+  // Sync search input if ?q= param changes (e.g. from Topbar)
+  useEffect(() => {
+    const q = searchParams.get('q')
+    if (q) setSearch(q)
+  }, [searchParams])
 
   const history = user?.history || []
   const allCourses = getAllCourses()

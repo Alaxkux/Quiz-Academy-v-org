@@ -11,12 +11,10 @@ const useAuthStore = create((set, get) => ({
 
   // ── INIT — call once on app mount ──
   async init() {
-    // Apply saved theme immediately before anything renders
-    applyTheme(getStoredTheme())
     try {
       const data = await authApi.me()
       const user = data.user
-      // Apply user's saved theme
+      // Apply user's saved theme (or fallback to localStorage)
       applyTheme(user.settings?.theme || getStoredTheme())
       set({
         user,

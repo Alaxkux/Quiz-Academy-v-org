@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express      = require('express');
 const session      = require('express-session');
 const MongoStore   = require('connect-mongo');
@@ -10,33 +11,37 @@ const connectDB    = require('./config/db');
 
 const app = express();
 
-// ✅ Connect DB
+// ── Connect to MongoDB ──
 connectDB();
 
-// ✅ Security
+// Debug (remove later if you want)
+console.log('Mongo URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Missing');
+
+// ── Helmet (security headers) ──
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 
-// ✅ CORS
+// ── CORS ──
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
 
-// ✅ Body parsers
+// ── Body parsers ──
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ✅ Sessions
+// ── Session ──
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev_secret',
+  secret: process.env.SESSION_SECRET || 'fallback_dev_secret',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
+    mongoUrl: process.env.MONGO_URI,   // ✅ FIXED HERE
+    ttl: 14 * 24 * 60 * 60
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
@@ -45,51 +50,66 @@ app.use(session({
   }
 }));
 
-// ✅ Routes
+// ── Routes ──
 app.use('/api/auth',    require('./routes/auth'));
 app.use('/api/ai',      require('./routes/ai'));
 app.use('/api/push',    require('./routes/push'));
 app.use('/api/history', require('./routes/history'));
 
-// ✅ Cron reminder
+// ── Streak reminder cron ──
 const { sendStreakReminders } = require('./routes/push');
 
 function scheduleDailyReminder() {
   const now = new Date();
-  const next8pm = new Date();
+  const next8pm = new Date(now);
 
   next8pm.setHours(20, 0, 0, 0);
   if (next8pm <= now) next8pm.setDate(next8pm.getDate() + 1);
 
-  const delay = next8pm - now;
+  const msUntil = next8pm - now;
 
   setTimeout(() => {
     sendStreakReminders();
     setInterval(sendStreakReminders, 24 * 60 * 60 * 1000);
-  }, delay);
+  }, msUntil);
+
+  const h = Math.floor(msUntil / 3600000);
+  const m = Math.floor((msUntil % 3600000) / 60000);
+
+  console.log(
+    `Push: ${
+      process.env.VAPID_PUBLIC_KEY
+        ? `✅ configured — first reminder in ${h}h ${m}m`
+        : '⚠️ VAPID keys missing (push disabled)'
+    }`
+  );
 }
 
-// ✅ Serve frontend (only if built)
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// ── Static frontend ──
+app.use(express.static(path.join(__dirname, '../client')));
 
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../client/index.html'));
   }
 });
 
-// ✅ Error handler
+// ── Global error handler ──
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err);
+  console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ✅ Start server
+// ── Start server ──
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`\n🎓 Quiz Academy running at http://localhost:${PORT}`);
   console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`MongoDB: ${process.env.MONGO_URI ? '✅ configured' : '❌ missing'}`);
+  console.log(`Gemini: ${process.env.GEMINI_API_KEY ? '✅ configured' : '❌ missing'}`);
+  console.log(`Email: ${process.env.EMAIL_USER ? '✅ configured' : '⚠️ missing (reset disabled)'}`);
 
   scheduleDailyReminder();
+  console.log('');
 });

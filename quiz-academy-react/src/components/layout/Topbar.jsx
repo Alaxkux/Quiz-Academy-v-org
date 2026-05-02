@@ -119,7 +119,10 @@ export default function Topbar({ onMenuClick, title }) {
 
   function handleSearch(e) {
     e.preventDefault()
-    if (search.trim()) { navigate('/categories'); setSearch('') }
+    if (search.trim()) {
+      navigate(`/categories?q=${encodeURIComponent(search.trim())}`)
+      setSearch('')
+    }
   }
 
   function toggleFullscreen() {

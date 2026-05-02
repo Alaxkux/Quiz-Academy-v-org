@@ -24,6 +24,8 @@ const PAGE_TITLES = {
   '/users':        'Users',
 }
 
+export { PAGE_TITLES }
+
 export default function PageWrapper({ children, title, className = '' }) {
   const location = useLocation()
   const pushNav  = useQuizStore(s => s.pushNav)

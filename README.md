@@ -309,4 +309,3 @@ MIT — free to use and modify.
 ---
 
 Built with ❤️ using Node.js, Express, MongoDB, and vanilla JS.
-# Quiz-Academy-v-org

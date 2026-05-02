@@ -4,26 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import MobileNav from './MobileNav'
-
-const PAGE_TITLES = {
-  '/dashboard':    'Dashboard',
-  '/categories':   'Categories',
-  '/play':         'Play Quiz',
-  '/quiz/config':  'Quiz Setup',
-  '/quiz/active':  'Quiz',
-  '/quiz/results': 'Results',
-  '/quiz/review':  'Review',
-  '/history':      'History',
-  '/leaderboard':  'Leaderboard',
-  '/achievements': 'Achievements',
-  '/ai':           'AI Questions',
-  '/builder':      'Course Builder',
-  '/brainstorm':   'Brainstorming',
-  '/profile':      'My Profile',
-  '/settings':     'Settings',
-  '/planner':      'Study Planner',
-  '/users':        'Users',
-}
+import { PAGE_TITLES } from './PageWrapper'
 
 export default function AppShell() {
   const location   = useLocation()
