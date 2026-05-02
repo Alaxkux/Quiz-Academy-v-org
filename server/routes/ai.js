@@ -136,3 +136,84 @@ Rules:
 });
 
 module.exports = router;
+
+// ── GENERATE FROM PDF ──
+router.post('/from-pdf', requireAuth, aiLimiter, async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY)
+      return res.status(503).json({ error: 'AI service not configured' })
+
+    // Handle multipart form — use multer in memory
+    const multer   = require('multer')
+    const pdfParse = require('pdf-parse')
+    const upload   = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
+
+    upload.single('pdf')(req, res, async (err) => {
+      if (err) return res.status(400).json({ error: 'Upload failed: ' + err.message })
+      if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' })
+
+      let text = ''
+      try {
+        const data = await pdfParse(req.file.buffer)
+        text = data.text?.trim() || ''
+      } catch (e) {
+        return res.status(400).json({ error: 'Could not extract text from PDF. Ensure it is a text-based PDF, not a scanned image.' })
+      }
+
+      if (!text || text.length < 100)
+        return res.status(400).json({ error: 'PDF has too little text to generate questions from' })
+
+      // Truncate to ~8000 words to fit Gemini token limit
+      const words    = text.split(/\s+/)
+      const truncated = words.slice(0, 8000).join(' ')
+
+      const difficulty = req.body.difficulty || 'medium'
+      const count      = Math.min(20, parseInt(req.body.count) || 10)
+
+      const prompt = `Based ONLY on the following study material, generate exactly ${count} multiple-choice questions.
+Difficulty: ${difficulty}. 
+
+STUDY MATERIAL:
+${truncated}
+
+Return ONLY a valid JSON array with no markdown, no code blocks:
+[{"q":"...","opts":["A","B","C","D"],"a":0,"explanation":"...","difficulty":"${difficulty}"}]
+
+Rules: "a" is the zero-based index of the correct answer. Exactly 4 options per question. Only use information from the material provided.`
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
+      const geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.5, maxOutputTokens: 4096, responseMimeType: 'application/json' }
+        })
+      })
+
+      if (!geminiRes.ok) return res.status(503).json({ error: 'AI service unavailable — try again' })
+
+      const geminiData = await geminiRes.json()
+      let raw = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      raw = raw.replace(/```json|```/g, '').trim()
+
+      let questions
+      try { questions = JSON.parse(raw) } catch {
+        const m = raw.match(/\[[\s\S]*\]/)
+        if (!m) return res.status(500).json({ error: 'AI returned unparseable response' })
+        questions = JSON.parse(m[0])
+      }
+
+      const valid = (Array.isArray(questions) ? questions : []).filter(q =>
+        q.q && Array.isArray(q.opts) && q.opts.length >= 2 && typeof q.a === 'number'
+      )
+
+      if (!valid.length) return res.status(500).json({ error: 'No valid questions generated — try a different PDF' })
+
+      res.json({ questions: valid, count: valid.length })
+    })
+  } catch (err) {
+    console.error('PDF generate error:', err)
+    res.status(500).json({ error: 'Failed to process PDF' })
+  }
+})

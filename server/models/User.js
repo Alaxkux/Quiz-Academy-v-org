@@ -72,6 +72,13 @@ const UserSchema = new mongoose.Schema({
   lastDailyChallenge:   { type: String,  default: null },
   isNewUser:            { type: Boolean, default: true },
 
+  // Web Push subscriptions (one per device, max 5)
+  pushSubscriptions: [{
+    endpoint: { type: String, required: true },
+    keys:     { type: Object, required: true },
+    addedAt:  { type: Date,   default: Date.now }
+  }],
+
   // Password reset
   resetPasswordToken:   { type: String },
   resetPasswordExpires: { type: Number },
@@ -100,6 +107,7 @@ UserSchema.methods.toPublicJSON = function() {
   delete obj.tokenVersion;
   delete obj.resetPasswordToken;
   delete obj.resetPasswordExpires;
+  delete obj.pushSubscriptions; // never expose subscription keys to client
   delete obj.__v;
   obj.hasSetPassword = this.hasSetPassword;
   obj.isGoogleUser   = !!this.googleId;

@@ -1,26 +1,21 @@
-/* ================================================================
-   QUIZ ACADEMY — DATABASE CONNECTION
-   Connects to MongoDB Atlas using Mongoose.
-   Call connectDB() once at server startup.
-   ================================================================ */
-
 const mongoose = require('mongoose');
 
-async function connectDB() {
+const connectDB = async () => {
   try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is missing in .env');
+    }
+
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
-    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
-  } catch (err) {
-    console.error('❌ MongoDB connection failed:', err.message);
-    console.error('   Check your MONGODB_URI in .env');
+
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
     process.exit(1);
   }
-}
-
-mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️  MongoDB disconnected');
-});
+};
 
 module.exports = connectDB;
