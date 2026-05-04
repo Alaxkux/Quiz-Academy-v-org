@@ -1,0 +1,1 @@
+import{t as e,w as t}from"./quizStore-D5nwiKsA.js";function n(n=`/dashboard`){let r=t(),i=e(e=>e.popNav);return function(){let e=i();e&&e!==window.location.pathname?r(e):r(n)}}export{n as t};

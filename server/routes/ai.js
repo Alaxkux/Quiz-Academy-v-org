@@ -127,15 +127,13 @@ Rules:
     if (valid.length === 0)
       return res.status(500).json({ error: 'AI questions failed validation — please try again' });
 
-    res.json({ questions: valid, count: valid.length, topic: topic.trim() });
+    res.json({ questions: valid, count: valid.length, topic: topic.trim() })
 
   } catch (err) {
-    console.error('AI generate error:', err);
-    res.status(500).json({ error: 'Failed to generate questions — please try again' });
+    console.error('AI generate error:', err)
+    res.status(500).json({ error: 'Failed to generate questions — please try again' })
   }
-});
-
-module.exports = router;
+})
 
 // ── GENERATE FROM PDF ──
 router.post('/from-pdf', requireAuth, aiLimiter, async (req, res) => {
@@ -217,3 +215,5 @@ Rules: "a" is the zero-based index of the correct answer. Exactly 4 options per 
     res.status(500).json({ error: 'Failed to process PDF' })
   }
 })
+
+module.exports = router

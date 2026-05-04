@@ -61,8 +61,9 @@ const useAuthStore = create((set, get) => ({
     const current = get().user
     if (!current) return
     const updated = { ...current, ...updates }
-    // Recalculate weighted avg if history changed
-    if (updates.history) {
+    // Only recalculate weightedAvgScore if history changed but stats were NOT explicitly provided
+    // (avoids overwriting carefully computed stats from QuizEngine.handleFinish)
+    if (updates.history && !updates.stats) {
       updated.stats = {
         ...updated.stats,
         weightedAvgScore: calculateSmartAverage(updates.history),
@@ -96,20 +97,21 @@ const useAuthStore = create((set, get) => ({
     const { user, notifications } = get()
     const updated = [n, ...notifications].slice(0, 50)
     set({ notifications: updated })
+    // Sync only notifications — avoid full updateUser re-render cascade
     if (user) {
-      get().updateUser({ notifications: updated })
+      authApi.sync({ notifications: updated }).catch(err => console.warn('Sync failed:', err.message))
     }
   },
 
   dismissNotification(id) {
     const updated = get().notifications.filter(n => n.id !== id)
     set({ notifications: updated })
-    get().updateUser({ notifications: updated })
+    authApi.sync({ notifications: updated }).catch(err => console.warn('Sync failed:', err.message))
   },
 
   clearNotifications() {
     set({ notifications: [] })
-    get().updateUser({ notifications: [] })
+    authApi.sync({ notifications: [] }).catch(err => console.warn('Sync failed:', err.message))
   },
 
   // ── THEME ──

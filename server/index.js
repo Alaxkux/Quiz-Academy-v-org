@@ -14,9 +14,6 @@ const app = express();
 // ── Connect to MongoDB ──
 connectDB();
 
-// Debug (remove later if you want)
-console.log('Mongo URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Missing');
-
 // ── Helmet (security headers) ──
 app.use(helmet({
   contentSecurityPolicy: false,
@@ -85,14 +82,12 @@ function scheduleDailyReminder() {
   );
 }
 
-// ── Static frontend (FIXED) ──
-const frontendPath = path.join(__dirname, '../quiz-academy-react/dist');
-
-app.use(express.static(frontendPath));
+// ── Static frontend (production build) ──
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
   }
 });
 

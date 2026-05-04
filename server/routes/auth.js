@@ -340,8 +340,6 @@ router.post('/reset-password', authLimiter, async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // CONFIG — exposes safe public config
 router.get('/config', (req, res) => {
   res.json({
@@ -349,5 +347,4 @@ router.get('/config', (req, res) => {
   });
 });
 
-// IMPORTANT: export must be LAST
 module.exports = router;

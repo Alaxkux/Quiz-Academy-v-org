@@ -5,7 +5,7 @@ import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import useQuizStore from '../../store/quizStore'
 import { useAuth } from '../../hooks/useAuth'
 import { checkAchievements, updateStreak } from '../../utils/gamification'
-import { calculateSmartAverage } from '../../data/levels'
+import { calculateSmartAverage, getLevelInfo } from '../../data/levels'
 import QuizOption from '../../components/quiz/QuizOption'
 import QuizProgress from '../../components/quiz/QuizProgress'
 import QuizTimer, { ElapsedTimer } from '../../components/quiz/QuizTimer'
@@ -183,23 +183,33 @@ export default function QuizEngine() {
     const result = finishQuiz()
     if (!result) { navigate('/dashboard'); return }
 
-    // Update user state
     if (user) {
-      const updatedHistory  = [...(user.history || []), result]
-      const updatedStats    = {
-        ...user.stats,
-        quizzesTaken:     (user.stats?.quizzesTaken || 0) + 1,
-        totalPoints:      (user.stats?.totalPoints  || 0) + result.points,
-        totalXP:          (user.stats?.totalXP      || 0) + result.xpEarned,
-        weightedAvgScore: calculateSmartAverage(updatedHistory),
-        ...updateStreak(user.stats),
-        categoriesPlayed: [
-          ...new Set([...(user.stats?.categoriesPlayed || []), result.category])
+      const prevStats      = user.stats || {}
+      const updatedHistory = [...(user.history || []), result]
+
+      // Compute streak separately — do NOT spread old stats inside
+      const streakUpdate = updateStreak(prevStats)
+
+      const updatedStats = {
+        ...prevStats,
+        quizzesTaken:        (prevStats.quizzesTaken        || 0) + 1,
+        totalPoints:         (prevStats.totalPoints          || 0) + result.points,
+        totalXP:             (prevStats.totalXP              || 0) + result.xpEarned,
+        weightedAvgScore:    calculateSmartAverage(updatedHistory),
+        // Streak fields come from streakUpdate — applied last so they don't get overwritten
+        streak:              streakUpdate.streak,
+        lastQuizDate:        streakUpdate.lastQuizDate,
+        categoriesPlayed:    [
+          ...new Set([...(prevStats.categoriesPlayed || []), result.category])
         ],
         dailyChallengesDone: result.isDailyChallenge
-          ? (user.stats?.dailyChallengesDone || 0) + 1
-          : (user.stats?.dailyChallengesDone || 0),
+          ? (prevStats.dailyChallengesDone || 0) + 1
+          : (prevStats.dailyChallengesDone || 0),
       }
+
+      // Recalculate level from new XP total
+      const { current: levelInfo } = getLevelInfo(updatedStats.totalXP)
+      updatedStats.currentLevel = levelInfo.level
 
       const { newAchievements, updatedList } = checkAchievements({
         stats: updatedStats, history: updatedHistory, achievements: user.achievements || []
@@ -209,13 +219,12 @@ export default function QuizEngine() {
       if (result.isDailyChallenge) lastDailyChallenge = new Date().toDateString()
 
       updateUser({
-        history:            updatedHistory.slice(-100), // keep last 100
+        history:            updatedHistory.slice(-100),
         stats:              updatedStats,
         achievements:       updatedList,
         lastDailyChallenge,
       })
 
-      // Pass new achievements to results page
       navigate('/quiz/results', {
         state: { result, newAchievements },
         replace: true,
