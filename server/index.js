@@ -1,43 +1,72 @@
 require('dotenv').config();
 
-const express      = require('express');
-const session      = require('express-session');
-const MongoStore   = require('connect-mongo');
+const express = require('express');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
-const cors         = require('cors');
-const helmet       = require('helmet');
-const path         = require('path');
-const connectDB    = require('./config/db');
+const cors = require('cors');
+const helmet = require('helmet');
+const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
 
-// ── Connect to MongoDB ──
-connectDB();
 
-// ── Helmet (security headers) ──
+// ─────────────────────────────
+// 🔐 ENV SAFETY CHECK (IMPORTANT)
+// ─────────────────────────────
+if (!process.env.MONGO_URI) {
+  console.error("❌ MONGO_URI is missing in environment variables");
+  process.exit(1);
+}
+
+
+// ─────────────────────────────
+// 📡 MongoDB Connection
+// ─────────────────────────────
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => {
+    console.error("❌ MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
+
+
+// ─────────────────────────────
+// 🛡️ Security Middleware
+// ─────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 
-// ── CORS ──
+
+// ─────────────────────────────
+// 🌐 CORS
+// ─────────────────────────────
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
 
-// ── Body parsers ──
+
+// ─────────────────────────────
+// 🧾 Body Parsers
+// ─────────────────────────────
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ── Session ──
+
+// ─────────────────────────────
+// 🧠 Session (Mongo Store)
+// ─────────────────────────────
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback_dev_secret',
+  secret: process.env.SESSION_SECRET || 'dev_secret_change_me',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,   // ✅ FIXED HERE
+    mongoUrl: process.env.MONGO_URI,
     ttl: 14 * 24 * 60 * 60
   }),
   cookie: {
@@ -47,13 +76,19 @@ app.use(session({
   }
 }));
 
-// ── Routes ──
-app.use('/api/auth',    require('./routes/auth'));
-app.use('/api/ai',      require('./routes/ai'));
-app.use('/api/push',    require('./routes/push'));
+
+// ─────────────────────────────
+// 📦 Routes
+// ─────────────────────────────
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/ai', require('./routes/ai'));
+app.use('/api/push', require('./routes/push'));
 app.use('/api/history', require('./routes/history'));
 
-// ── Streak reminder cron ──
+
+// ─────────────────────────────
+// ⏰ Push reminder scheduler
+// ─────────────────────────────
 const { sendStreakReminders } = require('./routes/push');
 
 function scheduleDailyReminder() {
@@ -70,19 +105,17 @@ function scheduleDailyReminder() {
     setInterval(sendStreakReminders, 24 * 60 * 60 * 1000);
   }, msUntil);
 
-  const h = Math.floor(msUntil / 3600000);
-  const m = Math.floor((msUntil % 3600000) / 60000);
-
   console.log(
-    `Push: ${
-      process.env.VAPID_PUBLIC_KEY
-        ? `✅ configured — first reminder in ${h}h ${m}m`
-        : '⚠️ VAPID keys missing (push disabled)'
-    }`
+    process.env.VAPID_PUBLIC_KEY
+      ? `✅ Push scheduled in ${Math.floor(msUntil / 3600000)}h`
+      : "⚠️ Push disabled (missing VAPID keys)"
   );
 }
 
-// ── Static frontend (production build) ──
+
+// ─────────────────────────────
+// 🧱 Static frontend (production)
+// ─────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
@@ -91,22 +124,26 @@ app.get('*', (req, res) => {
   }
 });
 
-// ── Global error handler ──
+
+// ─────────────────────────────
+// ❌ Error handler
+// ─────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error("🔥 Server error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
-// ── Start server ──
+
+// ─────────────────────────────
+// 🚀 Start server
+// ─────────────────────────────
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`\n🎓 Quiz Academy running at http://localhost:${PORT}`);
+  console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`MongoDB: ${process.env.MONGO_URI ? '✅ configured' : '❌ missing'}`);
-  console.log(`Gemini: ${process.env.GEMINI_API_KEY ? '✅ configured' : '❌ missing'}`);
-  console.log(`Email: ${process.env.EMAIL_USER ? '✅ configured' : '⚠️ missing (reset disabled)'}`);
+  console.log(`Mongo: ${process.env.MONGO_URI ? '✅ set' : '❌ missing'}`);
+  console.log(`Email: ${process.env.EMAIL_USER ? '✅ set' : '⚠️ missing'}`);
 
   scheduleDailyReminder();
-  console.log('');
 });
