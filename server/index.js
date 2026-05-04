@@ -85,12 +85,14 @@ function scheduleDailyReminder() {
   );
 }
 
-// ── Static frontend ──
-app.use(express.static(path.join(__dirname, '../client')));
+// ── Static frontend (FIXED) ──
+const frontendPath = path.join(__dirname, '../quiz-academy-react/dist');
+
+app.use(express.static(frontendPath));
 
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../client/index.html'));
+    res.sendFile(path.join(frontendPath, 'index.html'));
   }
 });
 
