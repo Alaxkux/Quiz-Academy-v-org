@@ -153,6 +153,433 @@ export const QUIZ_DATA = {
       { q: 'What is homeostasis?', opts: ['Cell reproduction','Maintaining stable internal conditions','Genetic mutation','Energy release'], a: 1, difficulty: 'medium', explanation: 'Homeostasis maintains internal stability.' },
     ],
   },
+  "IFT 212": {
+    "icon": "💻",
+    "color": "rgba(59, 130, 246, 0.1)",
+    "description": "Computer Architecture & Organization — CPU Design, ISA & Instruction Cycles",
+    "questions": [
+      {
+        "q": "What is the primary focus of Computer Architecture compared to Organization?",
+        "opts": ["Physical interconnection", "Logical and functional design visible to the programmer", "Chip manufacturing", "High-level language syntax"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "Architecture defines the system's attributes as seen by a programmer, like instruction sets and word sizes."
+      },
+      {
+        "q": "Which unit is the 'nerve center' of the CPU, generating timing signals?",
+        "opts": ["ALU", "Program Counter", "Control Unit", "MAR"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The Control Unit (CU) coordinates all hardware operations by generating timing and control signals."
+      },
+      {
+        "q": "What defines the Von Neumann Architecture?",
+        "opts": ["Separate data/instruction memory", "Shared bus and memory for data and instructions", "No registers", "Single-cycle execution"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Von Neumann systems use a single physical memory and bus for both instructions and data."
+      },
+      {
+        "q": "What does the 'opcode' in an instruction specify?",
+        "opts": ["Data address", "Register number", "The specific operation to perform", "Execution time"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The operation code (opcode) defines the specific task, such as addition or a jump."
+      },
+      {
+        "q": "Which addressing mode embeds the operand value directly in the instruction?",
+        "opts": ["Direct", "Indirect", "Indexed", "Immediate"],
+        "a": 3,
+        "difficulty": "medium",
+        "explanation": "Immediate addressing includes the actual constant value within the instruction itself."
+      },
+      {
+        "q": "In which cycle stage is an instruction translated into control signals?",
+        "opts": ["Fetch", "Decode", "Execute", "Write-back"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "During the decode stage, the CU interprets the opcode and prepares the necessary hardware paths."
+      },
+      {
+        "q": "Which register holds the address of the next instruction to be fetched?",
+        "opts": ["Instruction Register", "Program Counter", "Accumulator", "Memory Data Register"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "The Program Counter (PC) tracks the memory location of the next instruction in the sequence."
+      },
+      {
+        "q": "What is a major advantage of CISC over RISC?",
+        "opts": ["Lower instruction count per program", "Easier pipelining", "Faster single-cycle execution", "Simpler hardware"],
+        "a": 0,
+        "difficulty": "hard",
+        "explanation": "CISC uses complex instructions that do more per line, resulting in shorter programs in terms of instruction count."
+      },
+      {
+        "q": "Which unit is specialized for non-integer, decimal math?",
+        "opts": ["ALU", "FPU", "MMU", "AGU"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The Floating Point Unit (FPU) handles high-precision calculations involving real numbers."
+      },
+      {
+        "q": "In Load/Store architecture, where must operands be for an ADD instruction?",
+        "opts": ["In RAM", "In the stack", "In registers", "In the cache"],
+        "a": 2,
+        "difficulty": "hard",
+        "explanation": "Load/Store architectures require data to be moved into registers before any arithmetic operation can occur."
+      },
+      {
+        "q": "What is the 'Harvard Architecture' known for?",
+        "opts": ["Unified memory for data and instructions", "Physically separate storage and signal pathways for instructions and data", "Lack of a Control Unit", "Exclusively using magnetic tape"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Harvard architecture uses separate memory spaces, allowing the CPU to fetch an instruction and data simultaneously."
+      },
+      {
+        "q": "Which register stores the instruction currently being decoded or executed?",
+        "opts": ["Program Counter (PC)", "Memory Address Register (MAR)", "Instruction Register (IR)", "Accumulator (AC)"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The IR holds the actual instruction bits so the Control Unit can decode them."
+      },
+      {
+        "q": "What occurs during the 'Fetch' stage of the instruction cycle?",
+        "opts": ["The ALU performs a calculation", "The result is written to RAM", "The instruction is moved from memory to the CPU", "The opcode is translated"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "Fetching is the process of retrieving an instruction from the memory address pointed to by the PC."
+      },
+      {
+        "q": "What is the primary function of the Memory Address Register (MAR)?",
+        "opts": ["To store data retrieved from memory", "To hold the address of the location in memory to be accessed", "To perform logical AND operations", "To count the number of instructions"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The MAR holds the specific memory coordinates that the CPU wants to read from or write to."
+      },
+      {
+        "q": "Which type of ISA generally has a fixed instruction length?",
+        "opts": ["CISC", "RISC", "Von Neumann", "Harvard"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "RISC (Reduced Instruction Set Computer) typically uses fixed-length instructions to simplify fetching and pipelining."
+      },
+      {
+        "q": "What is the 'Von Neumann Bottleneck'?",
+        "opts": ["Excessive CPU heat", "Limited throughput between the CPU and memory due to a shared bus", "Slow hard drive speeds", "Software bugs in the OS"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "Because instructions and data share the same bus, the CPU often has to wait for one to finish before accessing the other."
+      },
+      {
+        "q": "Which component is responsible for arithmetic operations and logical comparisons?",
+        "opts": ["Control Unit", "Registers", "ALU", "Bus Interface"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The Arithmetic Logic Unit (ALU) is the 'calculator' of the CPU."
+      },
+      {
+        "q": "What does a 'Register Indirect' addressing mode use to find data?",
+        "opts": ["A constant value in the instruction", "The value stored in a register as a memory address", "The Program Counter", "A direct link to the I/O port"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "In indirect mode, the register doesn't hold the data itself, but rather the 'pointer' or address where the data lives."
+      },
+      {
+        "q": "Which bus is used to specify which hardware device the CPU wants to communicate with?",
+        "opts": ["Data Bus", "Address Bus", "Control Bus", "USB"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The Address Bus carries the location information for memory or I/O devices."
+      },
+      {
+        "q": "What is the purpose of the 'Write-back' stage?",
+        "opts": ["To fetch the next instruction", "To update memory or registers with the result of an operation", "To clear the cache", "To reset the Program Counter"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Write-back is the final stage where the computed result is saved to its destination."
+      },
+      {
+        "q": "In a 32-bit architecture, what does '32-bit' usually refer to?",
+        "opts": ["The physical size of the CPU", "The width of the data registers and ALU", "The number of cores", "The speed of the fan"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "The word size (e.g., 32-bit) refers to the size of data the CPU can process internally at once."
+      },
+      {
+        "q": "Which register acts as a buffer for data being sent to or received from memory?",
+        "opts": ["MAR", "MDR", "PC", "IR"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The Memory Data Register (MDR) or Memory Buffer Register (MBR) holds the actual data payload."
+      },
+      {
+        "q": "What defines a 'Superscalar' processor?",
+        "opts": ["It can execute multiple instructions per clock cycle", "It has a very large clock speed", "It uses only one register", "It is waterproof"],
+        "a": 0,
+        "difficulty": "hard",
+        "explanation": "Superscalar architectures have multiple execution units to process several instructions simultaneously."
+      },
+      {
+        "q": "Which of the following is a characteristic of RISC?",
+        "opts": ["Complex instructions taking multiple cycles", "Large number of addressing modes", "Emphasis on efficient pipelining", "Highly integrated microcode"],
+        "a": 2,
+        "difficulty": "medium",
+        "explanation": "RISC focuses on simple, single-cycle instructions that are easy to pipeline for higher performance."
+      },
+      {
+        "q": "What happens to the Program Counter (PC) after a fetch operation?",
+        "opts": ["It resets to zero", "It stays the same", "It is incremented to point to the next instruction", "It is cleared"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The PC automatically advances so the CPU knows where to go after the current instruction is done."
+      },
+      {
+        "q": "Which part of the CPU decodes the instruction?",
+        "opts": ["ALU", "Control Unit", "Main Memory", "System Bus"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "The Control Unit includes the decoder that interprets the instruction's bit pattern."
+      },
+      {
+        "q": "What is 'Pipelining' in computer architecture?",
+        "opts": ["Cooling the CPU with liquid", "Overlapping the execution of multiple instructions", "Connecting multiple CPUs together", "Increasing the size of the hard drive"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Pipelining allows different stages of multiple instructions to happen at the same time, like an assembly line."
+      },
+      {
+        "q": "Which addressing mode is most efficient for accessing arrays?",
+        "opts": ["Immediate", "Direct", "Indexed", "Absolute"],
+        "a": 2,
+        "difficulty": "hard",
+        "explanation": "Indexed addressing uses a base address plus an offset, which is ideal for stepping through array elements."
+      },
+      {
+        "q": "What is the function of the 'Status Register' (Flags)?",
+        "opts": ["To hold the CPU's serial number", "To store information about the outcome of the last ALU operation", "To control the power supply", "To store the user's password"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Flags (like Zero, Carry, Negative) indicate the results of calculations for conditional branching."
+      },
+      {
+        "q": "What type of memory is directly accessible by the CPU and very fast, but small?",
+        "opts": ["Hard Drive", "Registers", "Optical Disk", "Cloud Storage"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "Registers are the fastest storage in the hierarchy, located inside the CPU itself."
+      },
+      {
+        "q": "What is the 'Instruction Set'?",
+        "opts": ["The manual for the computer", "the complete set of all the instructions in machine code that can be recognized and executed by a central processing unit", "A collection of software apps", "A group of programmers"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "The ISA is the interface between the hardware and the software."
+      },
+      {
+        "q": "Which bus carries signals like 'Read' or 'Write' to memory?",
+        "opts": ["Data Bus", "Address Bus", "Control Bus", "PCIe Bus"],
+        "a": 2,
+        "difficulty": "medium",
+        "explanation": "The Control Bus manages the timing and synchronization of commands between components."
+      },
+      {
+        "q": "What does 'Effective Address' mean?",
+        "opts": ["The address of the CPU", "The actual physical address of an operand in memory", "A fake address used for testing", "The manufacturer's address"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The effective address is the final address calculated after applying addressing mode rules."
+      },
+      {
+        "q": "In a CISC architecture, instructions are usually:",
+        "opts": ["Variable length", "Fixed length", "Always 8 bits", "Only for math"],
+        "a": 0,
+        "difficulty": "medium",
+        "explanation": "CISC instructions can vary in size because they can pack complex operations into a single command."
+      },
+      {
+        "q": "What is a 'Branch' instruction used for?",
+        "opts": ["To shut down the computer", "To change the flow of execution to a different part of the program", "To multiply two numbers", "To increase the clock speed"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "Branches (jumps) allow the program to skip instructions or loop based on conditions."
+      },
+      {
+        "q": "Which architecture is common in modern microcontrollers for embedded systems?",
+        "opts": ["Only Von Neumann", "Harvard Architecture", "Mainframe Architecture", "Vacuum Tube Architecture"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "Harvard architecture is popular in microcontrollers because it allows simultaneous access to code and data."
+      },
+      {
+        "q": "What is the 'Accumulator' (AC) used for?",
+        "opts": ["Storing the total number of files", "Holding the intermediate results of arithmetic and logic operations", "Cooling the processor", "Managing network connections"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The Accumulator is a general-purpose register used as a primary workspace for the ALU."
+      },
+      {
+        "q": "What does 'Word Alignment' refer to?",
+        "opts": ["Storing data at memory addresses that are multiples of the word size", "Correcting spelling in a document", "Adjusting the screen resolution", "Aligning the CPU fan"],
+        "a": 0,
+        "difficulty": "hard",
+        "explanation": "Alignment ensures that memory access is efficient by matching data boundaries to bus widths."
+      },
+      {
+        "q": "Which component manages the interface between the CPU and external I/O devices?",
+        "opts": ["ALU", "Control Unit", "I/O Controller/Module", "Instruction Register"],
+        "a": 2,
+        "difficulty": "medium",
+        "explanation": "The I/O module acts as a bridge, translating internal CPU signals for external peripherals."
+      },
+      {
+        "q": "What is the main goal of the 'Execute' phase?",
+        "opts": ["To get a new instruction", "To carry out the operation specified by the instruction", "To turn off the power", "To delete data"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "Execution is the actual performance of the action, such as an ALU calculation or a jump."
+      },
+      {
+        "q": "What is the primary function of the System Bus?",
+        "opts": ["To provide power to the motherboard", "To act as a communication pathway between the CPU, memory, and I/O", "To store permanent user files", "To connect the computer to the internet"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "The system bus is the backbone that allows data, addresses, and control signals to move between major hardware components."
+      },
+      {
+        "q": "Which register holds the data item currently being written to or read from memory?",
+        "opts": ["Memory Buffer Register (MBR)", "Instruction Register (IR)", "Program Counter (PC)", "Status Register"],
+        "a": 0,
+        "difficulty": "medium",
+        "explanation": "The MBR (also known as the Memory Data Register) acts as a gateway for all data entering or leaving the CPU."
+      },
+      {
+        "q": "In a 'Big Endian' system, how is a multi-byte word stored in memory?",
+        "opts": ["Least significant byte at the lowest address", "Most significant byte at the lowest address", "Bytes are stored in random order", "Only the first byte is stored"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "Big Endian stores the 'big end' (most significant byte) first at the base memory address."
+      },
+      {
+        "q": "What characterizes the 'Execute' phase of the instruction cycle?",
+        "opts": ["Incrementing the Program Counter", "Retrieving the instruction from RAM", "The CPU performing the actual operation defined by the opcode", "Translating bits into control signals"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The execute stage is where the work—such as an arithmetic calculation or data transfer—actually happens."
+      },
+      {
+        "q": "What is 'Micro-architecture'?",
+        "opts": ["The high-level software design", "The specific hardware implementation of an ISA", "The physical size of the computer case", "The type of operating system used"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Micro-architecture refers to the internal organization of a processor that realizes a specific Instruction Set Architecture."
+      },
+      {
+        "q": "Which addressing mode is used in the instruction 'ADD R1, R2'?",
+        "opts": ["Immediate", "Direct", "Register", "Indirect"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "Register addressing specifies that the operands are located within the CPU's internal registers."
+      },
+      {
+        "q": "What is the role of the 'Instruction Decoder'?",
+        "opts": ["To perform mathematical additions", "To interpret the opcode and activate relevant hardware paths", "To store the program's output", "To speed up the clock rate"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The decoder translates the binary instruction into specific control signals for the ALU and other units."
+      },
+      {
+        "q": "Which of these is a typical characteristic of a RISC processor?",
+        "opts": ["Variable-length instructions", "Highly complex instructions", "One instruction per cycle execution goal", "Extensive use of microcode"],
+        "a": 2,
+        "difficulty": "medium",
+        "explanation": "RISC designs aim for simplicity and speed by executing most instructions in a single clock cycle."
+      },
+      {
+        "q": "What is the 'Word Size' of a computer?",
+        "opts": ["The number of words in a text document", "The maximum number of bits the CPU can process as a single unit", "The physical length of the data bus in centimeters", "The size of the hard drive"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "Word size defines the internal register width and the capacity of the ALU."
+      },
+      {
+        "q": "In the Von Neumann model, where are instructions stored?",
+        "opts": ["In a separate 'Instruction-only' memory", "In the same memory as data", "Only within the CPU registers", "On an external server"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "A hallmark of Von Neumann architecture is that instructions and data share a single address space."
+      },
+      {
+        "q": "Which signal is used to synchronize all CPU operations?",
+        "opts": ["Data signal", "Address signal", "System Clock", "Interrupt signal"],
+        "a": 2,
+        "difficulty": "easy",
+        "explanation": "The system clock provides periodic electrical pulses that pace the fetch-decode-execute cycle."
+      },
+      {
+        "q": "What is an 'Interrupt' in computer organization?",
+        "opts": ["A hardware failure", "A signal from a device that requires immediate CPU attention", "A way to delete memory", "A type of software virus"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Interrupts allow I/O devices to alert the CPU that they are ready for data transfer."
+      },
+      {
+        "q": "Which component is responsible for incrementing the Program Counter?",
+        "opts": ["The ALU", "The Control Unit", "The RAM", "The I/O Controller"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The Control Unit manages the sequencing of the program by updating the PC."
+      },
+      {
+        "q": "What does 'Orthogonality' in an ISA mean?",
+        "opts": ["The instructions are very long", "Instructions and addressing modes can be used independently and consistently", "The CPU uses 90-degree wiring", "The architecture only supports integer math"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "An orthogonal instruction set allows any addressing mode to be used with any instruction type."
+      },
+      {
+        "q": "What is 'Memory-Mapped I/O'?",
+        "opts": ["Using a map to find the RAM", "Treating I/O device registers as if they were memory addresses", "Storing the OS on a hard drive", "A way to increase cache size"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "In memory-mapped I/O, the CPU uses the same instructions to access both RAM and peripherals."
+      },
+      {
+        "q": "What is the purpose of a 'Buffer' in the CPU interface?",
+        "opts": ["To permanently store data", "To temporarily hold data to compensate for speed differences", "To encrypt the data bus", "To increase the voltage"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "Buffers like the MBR bridge the speed gap between the fast CPU and slower main memory."
+      },
+      {
+        "q": "Which register is typically used to store the results of ALU operations in a 0-address architecture?",
+        "opts": ["The Accumulator", "The Stack", "General Purpose Registers", "The Program Counter"],
+        "a": 1,
+        "difficulty": "hard",
+        "explanation": "Stack-based (0-address) architectures perform operations on the top items of a stack."
+      },
+      {
+        "q": "What defines 'Computer Organization' specifically?",
+        "opts": ["The programmer's interface", "How the architectural specifications are physically implemented", "The choice of programming language", "The user interface design"],
+        "a": 1,
+        "difficulty": "easy",
+        "explanation": "Organization deals with the operational units and their interconnections (e.g., control signals, interfaces)."
+      },
+      {
+        "q": "What is the function of the 'Carry Flag'?",
+        "opts": ["To indicate a hardware error", "To record if an arithmetic operation resulted in a carry-out of the most significant bit", "To signal an internet connection", "To store the user's name"],
+        "a": 1,
+        "difficulty": "medium",
+        "explanation": "The carry flag is a status bit used to handle multi-word arithmetic and overflows."
+      },
+      {
+        "q": "Which bus width determines the maximum amount of addressable memory?",
+        "opts": ["Data Bus", "Control Bus", "Address Bus", "Expansion Bus"],
+        "a": 2,
+        "difficulty": "medium",
+        "explanation": "The number of lines on the address bus determines the total number of unique memory locations the CPU can reach."
+      }
+    ]
+}
 }
 
 // Get all courses (built-in + custom from localStorage)
