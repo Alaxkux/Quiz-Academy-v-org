@@ -13,7 +13,7 @@ const TABS = [
 export default function MobileNav() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden h-[57px]"
       style={{
         background:   'var(--bg1)',
         borderTop:    '1px solid var(--border)',

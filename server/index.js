@@ -80,10 +80,11 @@ app.use(session({
 // ─────────────────────────────
 // 📦 Routes
 // ─────────────────────────────
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/ai', require('./routes/ai'));
-app.use('/api/push', require('./routes/push'));
+app.use('/api/auth',    require('./routes/auth'));
+app.use('/api/ai',      require('./routes/ai'));
+app.use('/api/push',    require('./routes/push'));
 app.use('/api/history', require('./routes/history'));
+app.use('/api/courses', require('./routes/courses'));
 
 
 // ─────────────────────────────

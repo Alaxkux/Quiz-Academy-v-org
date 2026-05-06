@@ -139,7 +139,7 @@ export default function Topbar({ onMenuClick, title }) {
 
   return (
     <header
-      className="sticky top-0 z-40 flex items-center gap-2 px-4 h-14 flex-shrink-0"
+      className="fixed top-0 left-0 right-0 md:left-64 z-40 flex items-center gap-2 px-4 h-14 flex-shrink-0"
       style={{ background: 'var(--bg1)', borderBottom: '1px solid var(--border)' }}
     >
       {/* Mobile menu button */}

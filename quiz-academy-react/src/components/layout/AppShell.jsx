@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
@@ -14,6 +14,13 @@ export default function AppShell() {
   )
 
   const title = PAGE_TITLES[location.pathname] || 'Quiz Academy'
+
+  const mainRef = useRef(null)
+
+  // Scroll to top of main content on every route change
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
+  }, [location.pathname])
 
   // Persist collapse state
   function toggleCollapse() {
@@ -48,18 +55,28 @@ export default function AppShell() {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            {/* Backdrop — click to close */}
+            {/* Backdrop — only between topbar and mobile nav */}
             <motion.div
-              className="fixed inset-0 z-30 md:hidden"
-              style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
+              className="fixed left-0 right-0 z-40 md:hidden"
+              style={{
+                top: '56px',
+                bottom: '57px',
+                background: 'rgba(0,0,0,0.7)',
+                backdropFilter: 'blur(3px)',
+              }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{   opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
             />
-            {/* Sidebar panel */}
+            {/* Sidebar panel — between topbar and mobile nav */}
             <motion.div
-              className="fixed top-0 left-0 bottom-0 z-40 md:hidden"
+              className="fixed left-0 z-50 md:hidden overflow-y-auto"
+              style={{
+                top: '56px',
+                bottom: '57px',
+                width: 'min(232px, 80vw)',
+              }}
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{   x: '-100%' }}
@@ -77,14 +94,17 @@ export default function AppShell() {
 
       {/* ── Main content area ── */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Topbar
-  onMenuClick={() => setSidebarOpen(true)}
-  title={title}
-/>
 
-{/* Page content — scrollable */}
-<main className="flex-1 overflow-y-auto p-4 md:p-6 pt-20">
-          <Outlet />
+        {/* Topbar spacer — reserves h-14 so fixed bar doesn't overlap */}
+        <div className="h-14 flex-shrink-0" />
+
+        <Topbar
+          onMenuClick={() => setSidebarOpen(true)}
+          title={title}
+        />
+
+        {/* Page content — scrollable */}
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 md:p-6">          <Outlet />
         </main>
       </div>
 

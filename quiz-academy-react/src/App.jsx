@@ -30,6 +30,7 @@ const Profile      = lazy(() => import('./pages/app/Profile'))
 const Settings     = lazy(() => import('./pages/app/Settings'))
 const StudyPlanner = lazy(() => import('./pages/app/StudyPlanner'))
 const Users        = lazy(() => import('./pages/app/Users'))
+const CourseManager = lazy(() => import('./pages/app/CourseManager'))
 
 // ── Page loading fallback ──
 function PageLoader() {
@@ -121,7 +122,8 @@ export default function App() {
         <Route path="/profile"     element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
         <Route path="/settings"    element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
         <Route path="/planner"     element={<Suspense fallback={<PageLoader />}><StudyPlanner /></Suspense>} />
-        <Route path="/users"       element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
+        <Route path="/users"          element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
+        <Route path="/courses/manage" element={<Suspense fallback={<PageLoader />}><CourseManager /></Suspense>} />
       </Route>
 
       {/* ── Catch-all ── */}

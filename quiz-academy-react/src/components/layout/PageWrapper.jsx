@@ -21,7 +21,8 @@ const PAGE_TITLES = {
   '/profile':      'My Profile',
   '/settings':     'Settings',
   '/planner':      'Study Planner',
-  '/users':        'Users',
+  '/users':          'Users',
+  '/courses/manage': 'Course Manager',
 }
 
 export { PAGE_TITLES }

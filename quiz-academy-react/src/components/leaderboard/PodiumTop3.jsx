@@ -4,7 +4,7 @@ import Avatar from '../ui/Avatar'
 import { fmtNum } from '../../utils/format'
 
 const MEDALS  = ['🥇','🥈','🥉']
-const HEIGHTS = [96, 64, 80]
+const HEIGHTS = [96, 80, 64]
 const ORDERS  = [1, 0, 2] // display: 2nd, 1st, 3rd
 
 export default function PodiumTop3({ users = [], pointsFn }) {

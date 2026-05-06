@@ -26,6 +26,7 @@ const NAV = [
       { to: '/brainstorm', label: 'Brainstorming',  icon: Brain },
       { to: '/planner',    label: 'Study Planner',  icon: Calendar },
       { to: '/builder',    label: 'Course Builder', icon: Hammer },
+      { to: '/courses/manage', label: 'Manage Courses', icon: BookOpen },
     ]
   },
   {
