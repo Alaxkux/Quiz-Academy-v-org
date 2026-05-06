@@ -1,5 +1,25 @@
-node_modules/
+# ── Environment variables (NEVER commit these) ──
 .env
-*.log
-.DS_Store
+.env.local
+.env.*.local
+
+# ── Dependencies ──
+node_modules/
+quiz-academy-react/node_modules/
+
+# ── Build output ──
 dist/
+server/public/assets/
+quiz-academy-react/dist/
+
+# ── Logs ──
+*.log
+npm-debug.log*
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+
+# ── Editor ──
+.vscode/
+.idea/

@@ -45,6 +45,14 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
   const navigate = useNavigate()
   const xpInfo   = user ? getLevelInfo(user.stats?.totalXP || 0) : null
 
+  // Filter out Manage Courses for non-admins
+  const NAV_FILTERED = NAV.map(group => ({
+    ...group,
+    items: group.items.filter(item =>
+      item.to === '/courses/manage' ? user?.isAdmin : true
+    )
+  }))
+
   async function handleLogout() {
     await logout()
     navigate('/login')
@@ -148,7 +156,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
 
       {/* ── Nav ── */}
       <nav className="flex-1 overflow-y-auto py-2 hide-scrollbar">
-        {NAV.map(group => (
+        {NAV_FILTERED.map(group => (
           <div key={group.section}>
             <AnimatePresence initial={false}>
               {!collapsed && (

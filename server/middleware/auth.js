@@ -28,4 +28,11 @@ function generateToken(userId) {
   });
 }
 
-module.exports = { requireAuth, generateToken };
+function requireAdmin(req, res, next) {
+  if (!req.user?.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireAdmin, generateToken };

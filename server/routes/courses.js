@@ -9,7 +9,7 @@
 
 const router  = require('express').Router()
 const Course  = require('../models/Course')
-const { requireAuth } = require('../middleware/auth')
+const { requireAuth, requireAdmin } = require('../middleware/auth')
 
 // ── GET all active courses (public) ──
 router.get('/', async (req, res) => {
@@ -38,7 +38,7 @@ router.get('/:code', async (req, res) => {
 })
 
 // ── POST create course (authenticated) ──
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { code, icon, color, description, questions } = req.body
 
@@ -66,7 +66,7 @@ router.post('/', requireAuth, async (req, res) => {
 })
 
 // ── PUT update course (authenticated + must be creator or built-in admin) ──
-router.put('/:code', requireAuth, async (req, res) => {
+router.put('/:code', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { icon, color, description, questions, isActive } = req.body
 
@@ -93,7 +93,7 @@ router.put('/:code', requireAuth, async (req, res) => {
 })
 
 // ── DELETE course (soft delete — sets isActive: false) ──
-router.delete('/:code', requireAuth, async (req, res) => {
+router.delete('/:code', requireAuth, requireAdmin, async (req, res) => {
   try {
     const course = await Course.findOne({ code: req.params.code })
     if (!course) return res.status(404).json({ error: 'Course not found' })

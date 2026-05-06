@@ -33,6 +33,8 @@ const UserSchema = new mongoose.Schema({
     type: String, required: true
   },
 
+  isAdmin:        { type: Boolean, default: false },
+
   // ── Google OAuth ──
   googleId:       { type: String, default: null, sparse: true },
   hasSetPassword: { type: Boolean, default: true }, // false = Google-only account, no real password
@@ -111,6 +113,7 @@ UserSchema.methods.toPublicJSON = function() {
   delete obj.__v;
   obj.hasSetPassword = this.hasSetPassword;
   obj.isGoogleUser   = !!this.googleId;
+  obj.isAdmin        = this.isAdmin;
   return obj;
 };
 

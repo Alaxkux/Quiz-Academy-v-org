@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Save, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Save, X, Upload, FileJson } from 'lucide-react'
 import { coursesApi } from '../../api/courses'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import Button from '../../components/ui/Button'
@@ -84,7 +84,50 @@ function QuestionEditor({ q, idx, onChange, onRemove }) {
 
 // ── Course form (create / edit) ──
 function CourseForm({ initial, onSave, onCancel, saving }) {
-  const [form, setForm] = useState(initial || emptyCourse())
+  const [form, setForm]         = useState(initial || emptyCourse())
+  const [jsonText, setJsonText] = useState('')
+  const [jsonError, setJsonError] = useState('')
+  const [jsonMode, setJsonMode] = useState(false)
+  const fileRef = useRef(null)
+
+  // Parse and load questions from JSON text
+  function applyJson(text) {
+    setJsonError('')
+    try {
+      const parsed = JSON.parse(text)
+      // Accept either an array of questions or a full course object
+      const questions = Array.isArray(parsed)
+        ? parsed
+        : parsed.questions || Object.values(parsed)[0]?.questions
+      if (!Array.isArray(questions) || questions.length === 0)
+        throw new Error('No questions array found in JSON')
+      // Validate shape
+      const valid = questions.filter(q =>
+        q.q && Array.isArray(q.opts) && q.opts.length >= 2 && typeof q.a === 'number'
+      )
+      if (valid.length === 0) throw new Error('No valid questions found (need q, opts[], a)')
+      setForm(f => ({ ...f, questions: valid.map(q => ({
+        q:           q.q,
+        opts:        q.opts,
+        a:           q.a,
+        difficulty:  ['easy','medium','hard'].includes(q.difficulty) ? q.difficulty : 'medium',
+        explanation: q.explanation || '',
+      }))}))
+      setJsonMode(false)
+      setJsonText('')
+    } catch (e) {
+      setJsonError(e.message)
+    }
+  }
+
+  function handleFileUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => applyJson(ev.target.result)
+    reader.readAsText(file)
+    e.target.value = ''
+  }
 
   const updateQuestion = (idx, updated) => {
     const questions = [...form.questions]
@@ -139,14 +182,67 @@ function CourseForm({ initial, onSave, onCancel, saving }) {
       <div className="mb-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold text-primary">Questions ({form.questions.length})</span>
-          <button
-            onClick={addQuestion}
-            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg transition-colors"
-            style={{ background: 'var(--accent)', color: '#fff' }}
-          >
-            <Plus size={12} /> Add Question
-          </button>
+          <div className="flex gap-2">
+            {/* JSON import buttons */}
+            <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleFileUpload} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg transition-colors"
+              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t2)' }}
+              title="Upload JSON file"
+            >
+              <Upload size={12} /> JSON File
+            </button>
+            <button
+              onClick={() => setJsonMode(m => !m)}
+              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg transition-colors"
+              style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t2)' }}
+              title="Paste JSON"
+            >
+              <FileJson size={12} /> Paste JSON
+            </button>
+            <button
+              onClick={addQuestion}
+              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg transition-colors"
+              style={{ background: 'var(--accent)', color: '#fff' }}
+            >
+              <Plus size={12} /> Add
+            </button>
+          </div>
         </div>
+
+        {/* JSON paste area */}
+        {jsonMode && (
+          <div className="mb-3 rounded-xl p-3" style={{ background: 'var(--bg0)', border: '1px solid var(--border)' }}>
+            <p className="text-xs text-muted mb-2">
+              Paste a JSON array of questions or a full course object. Each question needs: <code className="font-mono">q, opts[], a, difficulty, explanation</code>
+            </p>
+            <textarea
+              value={jsonText}
+              onChange={e => setJsonText(e.target.value)}
+              rows={6}
+              placeholder={'[\n  {\n    "q": "Question?",\n    "opts": ["A","B","C","D"],\n    "a": 0,\n    "difficulty": "medium",\n    "explanation": "Because..."\n  }\n]'}
+              className="w-full text-xs font-mono rounded-lg px-3 py-2 resize-none mb-2"
+              style={{ background: 'var(--bg1)', border: '1px solid var(--border)', color: 'var(--t1)' }}
+            />
+            {jsonError && <p className="text-xs mb-2" style={{ color: 'var(--red)' }}>⚠ {jsonError}</p>}
+            <div className="flex gap-2">
+              <button
+                onClick={() => applyJson(jsonText)}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                style={{ background: 'var(--accent)', color: '#fff' }}
+              >
+                Import Questions
+              </button>
+              <button
+                onClick={() => { setJsonMode(false); setJsonText(''); setJsonError('') }}
+                className="text-xs text-muted hover:text-primary transition-colors px-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         {form.questions.map((q, idx) => (
           <QuestionEditor
             key={idx} q={q} idx={idx}

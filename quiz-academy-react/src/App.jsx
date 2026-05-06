@@ -50,6 +50,14 @@ function RequireAuth({ children }) {
   return children
 }
 
+// ── Admin guard (redirect non-admins to dashboard) ──
+function RequireAdmin({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center h-screen bg-bg0"><Spinner size="lg" /></div>
+  if (!user?.isAdmin) return <Navigate to="/dashboard" replace />
+  return children
+}
+
 // ── Guest guard (redirect logged-in users away from auth pages) ──
 function GuestOnly({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -123,7 +131,7 @@ export default function App() {
         <Route path="/settings"    element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
         <Route path="/planner"     element={<Suspense fallback={<PageLoader />}><StudyPlanner /></Suspense>} />
         <Route path="/users"          element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
-        <Route path="/courses/manage" element={<Suspense fallback={<PageLoader />}><CourseManager /></Suspense>} />
+        <Route path="/courses/manage" element={<RequireAdmin><Suspense fallback={<PageLoader />}><CourseManager /></Suspense></RequireAdmin>} />
       </Route>
 
       {/* ── Catch-all ── */}
