@@ -363,7 +363,7 @@ function UserRow({ user, onDelete, isMe }) {
 export default function AdminDashboard() {
   const { user: me }              = useAuth()
   const navigate                  = useNavigate()
-  const [unlocked, setUnlocked]   = useState(() => sessionStorage.getItem('qa_admin_unlocked') === 'true')
+  const [unlocked, setUnlocked]   = useState(false)
   const [pinSet,   setPinSet]     = useState(false)
   const [users,    setUsers]      = useState([])
   const [loading,  setLoading]    = useState(false)
@@ -419,7 +419,7 @@ export default function AdminDashboard() {
     return (
       <PageWrapper>
         <PageHeader title="🛡️ Admin Dashboard" subtitle="Restricted access" />
-        <PinGate onUnlock={() => { setUnlocked(true); sessionStorage.setItem('qa_admin_unlocked', 'true') }} pinSet={pinSet} setPinSet={setPinSet} />
+        <PinGate onUnlock={() => setUnlocked(true)} pinSet={pinSet} setPinSet={setPinSet} />
       </PageWrapper>
     )
   }
