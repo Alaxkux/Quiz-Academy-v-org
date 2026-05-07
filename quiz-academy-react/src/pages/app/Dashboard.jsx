@@ -77,7 +77,11 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  if (!user) return null
+  if (!user) return (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="text-sm text-muted">Loading...</div>
+  </div>
+)
 
   const stats      = user.stats || {}
   const history    = user.history || []
