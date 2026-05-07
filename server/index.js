@@ -85,6 +85,7 @@ app.use('/api/ai',      require('./routes/ai'));
 app.use('/api/push',    require('./routes/push'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api/courses', require('./routes/courses'));
+app.use('/api/admin',   require('./routes/admin'));
 
 
 // ─────────────────────────────

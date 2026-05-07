@@ -30,7 +30,8 @@ const Profile      = lazy(() => import('./pages/app/Profile'))
 const Settings     = lazy(() => import('./pages/app/Settings'))
 const StudyPlanner = lazy(() => import('./pages/app/StudyPlanner'))
 const Users        = lazy(() => import('./pages/app/Users'))
-const CourseManager = lazy(() => import('./pages/app/CourseManager'))
+const CourseManager  = lazy(() => import('./pages/app/CourseManager'))
+const AdminDashboard = lazy(() => import('./pages/app/AdminDashboard'))
 
 // ── Page loading fallback ──
 function PageLoader() {
@@ -132,6 +133,7 @@ export default function App() {
         <Route path="/planner"     element={<Suspense fallback={<PageLoader />}><StudyPlanner /></Suspense>} />
         <Route path="/users"          element={<Suspense fallback={<PageLoader />}><Users /></Suspense>} />
         <Route path="/courses/manage" element={<RequireAdmin><Suspense fallback={<PageLoader />}><CourseManager /></Suspense></RequireAdmin>} />
+        <Route path="/admin" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense></RequireAdmin>} />
       </Route>
 
       {/* ── Catch-all ── */}

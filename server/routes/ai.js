@@ -60,7 +60,7 @@ Rules:
 - difficulty must be exactly "easy", "medium", or "hard"`;
 
     // ── Call Gemini API ──
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
     const geminiRes = await fetch(geminiUrl, {
       method: 'POST',
@@ -71,11 +71,7 @@ Rules:
         }],
         generationConfig: {
           temperature:     0.7,
-          maxOutputTokens: 4096,
-          responseMimeType: 'application/json'
-        },
-        systemInstruction: {
-          parts: [{ text: 'You are an educational quiz question generator. Return only valid JSON arrays of questions. Never include markdown, code fences, or explanatory text outside the JSON.' }]
+          maxOutputTokens: 4096
         }
       })
     });
@@ -179,7 +175,7 @@ Return ONLY a valid JSON array with no markdown, no code blocks:
 
 Rules: "a" is the zero-based index of the correct answer. Exactly 4 options per question. Only use information from the material provided.`
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
       const geminiRes = await fetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

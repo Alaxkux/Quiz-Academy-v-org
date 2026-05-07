@@ -22,4 +22,4 @@ Thumbs.db
 
 # ── Editor ──
 .vscode/
-.idea/
+.idea/.env

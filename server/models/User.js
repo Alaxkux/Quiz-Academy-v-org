@@ -34,6 +34,7 @@ const UserSchema = new mongoose.Schema({
   },
 
   isAdmin:        { type: Boolean, default: false },
+  adminPinHash:   { type: String, default: null },   // hashed admin PIN
 
   // ── Google OAuth ──
   googleId:       { type: String, default: null, sparse: true },
@@ -109,7 +110,8 @@ UserSchema.methods.toPublicJSON = function() {
   delete obj.tokenVersion;
   delete obj.resetPasswordToken;
   delete obj.resetPasswordExpires;
-  delete obj.pushSubscriptions; // never expose subscription keys to client
+  delete obj.pushSubscriptions;
+  delete obj.adminPinHash;       // never expose PIN hash
   delete obj.__v;
   obj.hasSetPassword = this.hasSetPassword;
   obj.isGoogleUser   = !!this.googleId;

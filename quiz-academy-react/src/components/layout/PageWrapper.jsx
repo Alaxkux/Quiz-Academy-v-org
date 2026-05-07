@@ -23,6 +23,7 @@ const PAGE_TITLES = {
   '/planner':      'Study Planner',
   '/users':          'Users',
   '/courses/manage': 'Course Manager',
+  '/admin':          'Admin Dashboard',
 }
 
 export { PAGE_TITLES }
