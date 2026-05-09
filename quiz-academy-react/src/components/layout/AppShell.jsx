@@ -18,7 +18,7 @@ export default function AppShell() {
   const mainRef = useRef(null)
 
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    mainRef.current?.scrollTo({ top: 0, behavior: 'instant' })
   }, [location.pathname])
 
   function toggleCollapse() {
@@ -90,7 +90,7 @@ export default function AppShell() {
         <main
           ref={mainRef}
           className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6"
-          style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+          style={{ scrollBehavior: 'auto', overscrollBehavior: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           <Outlet />
         </main>
@@ -100,4 +100,4 @@ export default function AppShell() {
       <MobileNav />
     </div>
   )
-}
+} 

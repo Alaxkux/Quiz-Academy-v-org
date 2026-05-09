@@ -112,9 +112,6 @@ html, body, #root {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Smooth scroll */
-main { scroll-behavior: smooth; overscroll-behavior: contain; }
-
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
