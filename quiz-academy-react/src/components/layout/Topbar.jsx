@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, Sun, Moon, Maximize2, Menu, X, Check } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Maximize2, X, PanelLeft } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { getStoredTheme } from '../../data/themes'
 import Avatar from '../ui/Avatar'
 
-// ── Notification dropdown ──
 function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
   return (
     <AnimatePresence>
@@ -26,8 +25,6 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
               <button onClick={onClearAll} className="text-xs text-muted hover:text-red transition-colors">Clear all</button>
             )}
           </div>
-
-          {/* Max 3 visible, rest scrollable */}
           <div className="overflow-y-auto" style={{ maxHeight: `${3 * 60}px` }}>
             {notifications.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted">No notifications yet</div>
@@ -60,7 +57,6 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
   )
 }
 
-// ── Profile dropdown ──
 function ProfileDropdown({ open, user, onNavigate, onLogout }) {
   return (
     <AnimatePresence>
@@ -94,7 +90,7 @@ function ProfileDropdown({ open, user, onNavigate, onLogout }) {
   )
 }
 
-export default function Topbar({ onMenuClick, title }) {
+export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed, title }) {
   const navigate  = useNavigate()
   const { user, notifications, dismissNotification, clearNotifications, logout } = useAuth()
   const { currentTheme, toggle } = useTheme()
@@ -107,7 +103,6 @@ export default function Topbar({ onMenuClick, title }) {
   const lightThemes = ['snow', 'paper', 'rose']
   const isLight     = lightThemes.includes(getStoredTheme())
 
-  // Close dropdowns on outside click
   useEffect(() => {
     function handle(e) {
       if (notifRef.current   && !notifRef.current.contains(e.target))   setNotifOpen(false)
@@ -139,16 +134,37 @@ export default function Topbar({ onMenuClick, title }) {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 md:left-64 z-40 flex items-center gap-2 px-4 h-14 flex-shrink-0"
-      style={{ background: 'var(--bg1)', borderBottom: '1px solid var(--border)' }}
+      className="fixed top-0 right-0 z-40 flex items-center gap-2 px-4 h-14 flex-shrink-0"
+      style={{
+        left: 0,
+        background: 'var(--bg1)',
+        borderBottom: '1px solid var(--border)',
+      }}
     >
       {/* Mobile menu button */}
-      <button onClick={onMenuClick} className="flex md:hidden w-9 h-9 items-center justify-center rounded-xl text-muted hover:text-primary transition-colors"
-        style={{ border: '1px solid var(--border)' }}>
-        <Menu size={16} />
+      <button
+        onClick={onMenuClick}
+        className="flex md:hidden w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors"
+      >
+        <PanelLeft size={16} />
       </button>
 
-      {/* Page title */}
+      {/* Desktop sidebar toggle — Claude-style */}
+      <button
+        onClick={onToggleCollapse}
+        className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors"
+        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <motion.div
+          animate={{ scaleX: sidebarCollapsed ? -1 : 1 }}
+          transition={{ duration: 0.2 }}
+          style={{ originX: 0.5 }}
+        >
+          <PanelLeft size={16} />
+        </motion.div>
+      </button>
+
+      {/* Page title — mobile only */}
       <span className="font-display font-semibold text-base text-primary flex-1 truncate md:hidden">{title}</span>
 
       {/* Search — desktop */}
@@ -167,15 +183,13 @@ export default function Topbar({ onMenuClick, title }) {
       <div className="flex items-center gap-1.5 ml-auto">
         {/* Fullscreen — desktop only */}
         <button onClick={toggleFullscreen}
-          className="hidden md:flex w-9 h-9 items-center justify-center rounded-xl text-muted hover:text-primary transition-colors"
-          style={{ border: '1px solid var(--border)' }}>
+          className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors">
           <Maximize2 size={14} />
         </button>
 
         {/* Theme toggle */}
         <button onClick={toggle}
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-primary transition-colors"
-          style={{ border: '1px solid var(--border)' }}>
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors">
           {isLight ? <Moon size={14} /> : <Sun size={14} />}
         </button>
 
@@ -183,8 +197,7 @@ export default function Topbar({ onMenuClick, title }) {
         <div ref={notifRef} className="relative">
           <button
             onClick={() => { setNotifOpen(v => !v); setProfileOpen(false) }}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-muted hover:text-primary transition-colors relative"
-            style={{ border: '1px solid var(--border)' }}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors relative"
           >
             <Bell size={14} />
             {unreadCount > 0 && (
@@ -204,7 +217,7 @@ export default function Topbar({ onMenuClick, title }) {
         <div ref={profileRef} className="relative">
           <button
             onClick={() => { setProfileOpen(v => !v); setNotifOpen(false) }}
-            className="w-9 h-9 flex items-center justify-center rounded-full overflow-hidden transition-opacity hover:opacity-80"
+            className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden transition-opacity hover:opacity-80"
             style={{ border: '2px solid var(--border)' }}
           >
             <Avatar src={user?.avatar} name={user?.name || 'User'} size="sm" />

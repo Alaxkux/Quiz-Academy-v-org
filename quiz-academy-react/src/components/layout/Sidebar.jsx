@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, BookOpen, Play, Brain, Clock, Hammer,
+  LayoutDashboard, BookOpen, Play, Brain, Hammer,
   Trophy, History, Award, Users, User, Settings, LogOut,
-  Sparkles, ChevronLeft, X, Calendar, Shield
+  Sparkles, X, Calendar, Shield
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { getLevelInfo } from '../../data/levels'
@@ -51,16 +51,20 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
 
   return (
     <aside
-      className="flex flex-col h-full overflow-hidden transition-all duration-250"
+      className="flex flex-col h-full overflow-hidden"
       style={{
         width:      collapsed ? 64 : 232,
         minWidth:   collapsed ? 64 : 232,
         background: 'var(--bg1)',
         borderRight: '1px solid var(--border)',
+        transition: 'width 0.25s ease, min-width 0.25s ease',
       }}
     >
-      {/* ── Brand ── */}
-      <div className="flex items-center gap-2.5 p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+      {/* ── Brand — same height as topbar (h-14) ── */}
+      <div
+        className="flex items-center h-14 flex-shrink-0 border-b px-4"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center font-display font-black text-sm text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, var(--accent), var(--green))' }}
@@ -70,7 +74,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
         <AnimatePresence initial={false}>
           {!collapsed && (
             <motion.div
-              className="flex-1 min-w-0"
+              className="flex-1 min-w-0 ml-2.5"
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{   opacity: 0, width: 0 }}
@@ -82,20 +86,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
           )}
         </AnimatePresence>
 
-        {/* Desktop collapse btn / Mobile close btn */}
-        {isMobile ? (
+        {/* Mobile close btn */}
+        {isMobile && (
           <button onClick={onClose} className="ml-auto p-1 rounded-lg text-muted hover:text-primary transition-colors">
             <X size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={onToggleCollapse}
-            className="ml-auto p-1 rounded-lg text-muted hover:text-primary transition-colors"
-            title={collapsed ? 'Expand' : 'Collapse'}
-          >
-            <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronLeft size={14} />
-            </motion.div>
           </button>
         )}
       </div>
@@ -103,8 +97,13 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       {/* ── User chip ── */}
       {user && (
         <div
-          className="mx-3 mt-3 p-2.5 rounded-xl flex items-center gap-2.5 overflow-hidden"
-          style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}
+          className="mx-3 mt-3 p-2.5 rounded-xl flex items-center overflow-hidden"
+          style={{
+            background: 'var(--bg2)',
+            border: '1px solid var(--border)',
+            gap: collapsed ? 0 : 10,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+          }}
         >
           <Avatar src={user.avatar} name={user.name} size="sm" />
           <AnimatePresence initial={false}>
@@ -166,10 +165,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
                 onClick={isMobile ? onClose : undefined}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all relative
-                   ${isActive
-                     ? 'font-medium border-l-2'
-                     : 'border-l-2 border-transparent hover:opacity-80'}`
+                  `flex items-center py-2.5 text-sm transition-all relative border-l-2
+                   ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
+                   ${isActive ? 'font-medium' : 'border-transparent hover:opacity-80'}`
                 }
                 style={({ isActive }) => isActive
                   ? { color: 'var(--accent)', background: 'var(--accent-dim)', borderLeftColor: 'var(--accent)' }
@@ -204,13 +202,14 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
 
       {/* ── Footer ── */}
       <div className="border-t py-2" style={{ borderColor: 'var(--border)' }}>
-        {/* Admin link — only for admin users */}
         {user?.isAdmin && (
           <NavLink
             to="/admin"
             onClick={isMobile ? onClose : undefined}
+            title={collapsed ? 'Admin' : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-4 py-2 text-sm transition-colors
+              `flex items-center py-2 text-sm transition-colors
+               ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
                ${isActive ? 'text-accent' : 'text-muted hover:text-primary'}`
             }
           >
@@ -221,8 +220,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
         <NavLink
           to="/profile"
           onClick={isMobile ? onClose : undefined}
+          title={collapsed ? 'Profile' : undefined}
           className={({ isActive }) =>
-            `flex items-center gap-2.5 px-4 py-2 text-sm transition-colors
+            `flex items-center py-2 text-sm transition-colors
+             ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
              ${isActive ? 'text-accent' : 'text-muted hover:text-primary'}`
           }
         >
@@ -232,8 +233,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
         <NavLink
           to="/settings"
           onClick={isMobile ? onClose : undefined}
+          title={collapsed ? 'Settings' : undefined}
           className={({ isActive }) =>
-            `flex items-center gap-2.5 px-4 py-2 text-sm transition-colors
+            `flex items-center py-2 text-sm transition-colors
+             ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
              ${isActive ? 'text-accent' : 'text-muted hover:text-primary'}`
           }
         >
@@ -242,8 +245,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
         </NavLink>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-4 py-2 text-sm transition-colors text-muted hover:text-red"
-          style={{ '--tw-text-opacity': 1 }}
+          title={collapsed ? 'Sign out' : undefined}
+          className={`w-full flex items-center py-2 text-sm transition-colors text-muted hover:text-red
+            ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}`}
         >
           <LogOut size={15} className="flex-shrink-0" />
           {!collapsed && <span>Sign out</span>}

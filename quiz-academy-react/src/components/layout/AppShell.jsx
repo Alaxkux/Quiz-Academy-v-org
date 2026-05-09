@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { PanelLeft } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import MobileNav from './MobileNav'
@@ -14,25 +15,20 @@ export default function AppShell() {
   )
 
   const title = PAGE_TITLES[location.pathname] || 'Quiz Academy'
-
   const mainRef = useRef(null)
 
-  // Scroll to top of main content on every route change
   useEffect(() => {
-    mainRef.current?.scrollTo(0, 0)
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }, [location.pathname])
 
-  // Persist collapse state
   function toggleCollapse() {
     const next = !sidebarCollapsed
     setSidebarCollapsed(next)
     localStorage.setItem('qa_sb_collapsed', String(next))
   }
 
-  // Close mobile sidebar on route change
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
-  // Close mobile sidebar on Escape
   useEffect(() => {
     const handle = e => { if (e.key === 'Escape') setSidebarOpen(false) }
     document.addEventListener('keydown', handle)
@@ -55,38 +51,23 @@ export default function AppShell() {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            {/* Backdrop — only between topbar and mobile nav */}
             <motion.div
               className="fixed left-0 right-0 z-40 md:hidden"
-              style={{
-                top: '56px',
-                bottom: '57px',
-                background: 'rgba(0,0,0,0.7)',
-                backdropFilter: 'blur(3px)',
-              }}
+              style={{ top: '56px', bottom: '57px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{   opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
             />
-            {/* Sidebar panel — between topbar and mobile nav */}
             <motion.div
               className="fixed left-0 z-50 md:hidden overflow-y-auto"
-              style={{
-                top: '56px',
-                bottom: '57px',
-                width: 'min(232px, 80vw)',
-              }}
+              style={{ top: '56px', bottom: '57px', width: 'min(232px, 80vw)' }}
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{   x: '-100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 40 }}
             >
-              <Sidebar
-                collapsed={false}
-                isMobile={true}
-                onClose={() => setSidebarOpen(false)}
-              />
+              <Sidebar collapsed={false} isMobile={true} onClose={() => setSidebarOpen(false)} />
             </motion.div>
           </>
         )}
@@ -95,16 +76,23 @@ export default function AppShell() {
       {/* ── Main content area ── */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
 
-        {/* Topbar spacer — reserves h-14 so fixed bar doesn't overlap */}
+        {/* Topbar spacer */}
         <div className="h-14 flex-shrink-0" />
 
         <Topbar
           onMenuClick={() => setSidebarOpen(true)}
+          onToggleCollapse={toggleCollapse}
+          sidebarCollapsed={sidebarCollapsed}
           title={title}
         />
 
-        {/* Page content — scrollable */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 md:p-6" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+        {/* Page content */}
+        <main
+          ref={mainRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6"
+          style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+        >
+          <Outlet />
         </main>
       </div>
 
