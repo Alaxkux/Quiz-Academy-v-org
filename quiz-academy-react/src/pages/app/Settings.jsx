@@ -1,14 +1,100 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Palette, Bell, User, Database } from 'lucide-react'
+import { Palette, Bell, User, Database, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
+import { authApi } from '../../api/auth'
 import { THEMES } from '../../data/themes'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import Button from '../../components/ui/Button'
 import { ConfirmModal } from '../../components/ui/Modal'
+
+function PasswordChangeSection() {
+  const [open,        setOpen]        = useState(false)
+  const [current,     setCurrent]     = useState('')
+  const [newPass,     setNewPass]     = useState('')
+  const [confirm,     setConfirm]     = useState('')
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew,     setShowNew]     = useState(false)
+  const [loading,     setLoading]     = useState(false)
+
+  async function handleChange() {
+    if (!current)               return toast.error('Enter your current password')
+    if (newPass.length < 8)     return toast.error('New password must be at least 8 characters')
+    if (newPass !== confirm)    return toast.error('Passwords do not match')
+    if (newPass === current)    return toast.error('New password must be different')
+    setLoading(true)
+    try {
+      await authApi.changePassword({ currentPassword: current, newPassword: newPass })
+      toast.success('Password changed successfully ✓')
+      setCurrent(''); setNewPass(''); setConfirm(''); setOpen(false)
+    } catch (e) {
+      toast.error(e.message || 'Failed to change password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+      <div className="flex items-center justify-between gap-3 p-4">
+        <div>
+          <h4 className="font-medium text-sm text-primary">Password</h4>
+          <p className="text-xs text-secondary mt-0.5">Change your account password</p>
+        </div>
+        <Button variant="ghost" size="xs" onClick={() => setOpen(o => !o)}>
+          {open ? 'Cancel' : 'Change'}
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{   height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-3 px-4 pb-4 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="pt-3" />
+              {[
+                { label: 'Current Password', val: current, set: setCurrent, show: showCurrent, toggle: () => setShowCurrent(s => !s) },
+                { label: 'New Password (min 8 chars)', val: newPass, set: setNewPass, show: showNew, toggle: () => setShowNew(s => !s) },
+                { label: 'Confirm New Password', val: confirm, set: setConfirm, show: showNew, toggle: null },
+              ].map(({ label, val, set, show, toggle }) => (
+                <div key={label}>
+                  <label className="text-xs text-muted mb-1 block">{label}</label>
+                  <div className="relative">
+                    <input
+                      type={show ? 'text' : 'password'}
+                      value={val}
+                      onChange={e => set(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm outline-none pr-9"
+                      style={{ background: 'var(--bg1)', border: '1px solid var(--border)', color: 'var(--t1)' }}
+                      onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                      onBlur={e  => e.target.style.borderColor = 'var(--border)'}
+                    />
+                    {toggle && (
+                      <button onClick={toggle} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted">
+                        {show ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <Button variant="primary" size="sm" loading={loading} onClick={handleChange} className="w-full mt-1">
+                Update Password
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 const TABS = [
   { id: 'appearance',    label: 'Appearance',    icon: Palette  },
@@ -117,17 +203,7 @@ function AccountTab() {
       </div>
 
       {!user?.isGoogleUser && (
-        <div className="rounded-xl p-4" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h4 className="font-medium text-sm text-primary">Password</h4>
-              <p className="text-xs text-secondary mt-0.5">Change your account password</p>
-            </div>
-            <Button variant="ghost" size="xs" onClick={() => navigate('/forgot-password')}>
-              Reset
-            </Button>
-          </div>
-        </div>
+        <PasswordChangeSection />
       )}
 
       <div className="rounded-xl p-4" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>

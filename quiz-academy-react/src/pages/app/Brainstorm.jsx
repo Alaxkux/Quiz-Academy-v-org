@@ -144,11 +144,6 @@ export default function Brainstorm() {
       <PageHeader
         title="🧠 Brainstorming"
         subtitle="Flip through flashcards to test your recall"
-        action={
-          <Button variant="ghost" size="sm" onClick={() => navigate('/settings')}>
-            <Clock size={13} /> Time Settings
-          </Button>
-        }
       />
 
       {/* Category selector */}
@@ -191,11 +186,6 @@ export default function Brainstorm() {
             </button>
           ))}
         </div>
-        {/* Link to time limit settings page */}
-        <button onClick={() => navigate('/settings')}
-          className="text-xs text-muted hover:text-accent transition-colors underline">
-          More →
-        </button>
       </div>
 
       {!cards.length ? (

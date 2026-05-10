@@ -26,12 +26,14 @@ export default function Profile() {
   const stats  = user?.stats || {}
   const xpInfo = getLevelInfo(stats.totalXP || 0)
 
+  const [showSizeWarning, setShowSizeWarning] = useState(false)
+
   // Pick image → set preview, then show confirm on Save
   function handleFileChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
-    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+    if (file.size > 5 * 1024 * 1024) { setShowSizeWarning(true); e.target.value = ''; return }
     const reader = new FileReader()
     reader.onload = ev => setPendingAvatar(ev.target.result)
     reader.readAsDataURL(file)
@@ -206,6 +208,18 @@ export default function Profile() {
         message="Save this image as your new profile picture?"
         icon="📷"
         confirmLabel="Save Photo"
+        danger={false}
+      />
+
+      {/* Image size warning modal */}
+      <ConfirmModal
+        open={showSizeWarning}
+        onClose={() => setShowSizeWarning(false)}
+        onConfirm={() => setShowSizeWarning(false)}
+        title="Image Too Large"
+        message="Your photo exceeds the 5MB limit. Please choose a smaller image or compress it before uploading."
+        icon="⚠️"
+        confirmLabel="Got it"
         danger={false}
       />
     </PageWrapper>

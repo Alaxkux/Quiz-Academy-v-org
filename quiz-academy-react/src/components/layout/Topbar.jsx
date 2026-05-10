@@ -134,9 +134,8 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
 
   return (
     <header
-      className="fixed top-0 right-0 z-40 flex items-center gap-2 px-4 h-14 flex-shrink-0"
+      className="flex items-center gap-2 px-4 h-14 flex-shrink-0 z-40"
       style={{
-        left: 0,
         background: 'var(--bg1)',
         borderBottom: '1px solid var(--border)',
       }}

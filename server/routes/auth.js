@@ -340,6 +340,30 @@ router.post('/reset-password', authLimiter, async (req, res) => {
   }
 });
 
+// CHANGE PASSWORD — authenticated users only
+router.post('/change-password', requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+    if (!currentPassword)              return res.status(400).json({ error: 'Current password is required' })
+    if (!newPassword || newPassword.length < 8)
+      return res.status(400).json({ error: 'New password must be at least 8 characters' })
+
+    const user = await User.findById(req.user._id)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+
+    const isMatch = await user.comparePassword(currentPassword)
+    if (!isMatch) return res.status(401).json({ error: 'Current password is incorrect' })
+
+    user.password = newPassword
+    user.hasSetPassword = true
+    await user.save()
+    res.json({ message: 'Password changed successfully' })
+  } catch (err) {
+    console.error('Change password error:', err)
+    res.status(500).json({ error: 'Failed to change password' })
+  }
+})
+
 // CONFIG — exposes safe public config
 router.get('/config', (req, res) => {
   res.json({

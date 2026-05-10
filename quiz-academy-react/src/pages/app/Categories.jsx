@@ -4,6 +4,7 @@ import { Search, Plus, Upload } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { getAllCourses } from '../../data/quizData'
+import { coursesApi } from '../../api/courses'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import CourseCard from '../../components/categories/CourseCard'
 import Button from '../../components/ui/Button'
@@ -13,17 +14,45 @@ export default function Categories() {
   const [searchParams]    = useSearchParams()
   const { user }          = useAuth()
   const [search, setSearch] = useState(searchParams.get('q') || '')
+  const [dbCourses, setDbCourses] = useState({})
+  const [loadingDb, setLoadingDb] = useState(true)
 
-  // Sync search input if ?q= param changes (e.g. from Topbar)
   useEffect(() => {
     const q = searchParams.get('q')
     if (q) setSearch(q)
   }, [searchParams])
 
-  const history = user?.history || []
-  const allCourses = getAllCourses()
+  // Fetch admin-added courses from MongoDB
+  useEffect(() => {
+    coursesApi.getAll()
+      .then(data => {
+        const map = {}
+        ;(data.courses || []).forEach(c => {
+          map[c.code] = {
+            name:          c.code,
+            description:   c.description || '',
+            icon:          c.icon || '📚',
+            color:         c.color || 'rgba(108,142,255,.12)',
+            isCustom:      true,
+            fromDb:        true,
+            questions:     { length: c.questionCount || 0 },
+          }
+        })
+        setDbCourses(map)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDb(false))
+  }, [])
 
-  // Live filter by search
+  const history    = user?.history || []
+  const localCourses = getAllCourses()
+
+  // Merge: DB courses take priority over local ones with same code
+  const allCourses = useMemo(() => ({
+    ...localCourses,
+    ...dbCourses,
+  }), [localCourses, dbCourses])
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
     if (!q) return Object.entries(allCourses)
@@ -34,7 +63,7 @@ export default function Categories() {
     )
   }, [search, allCourses])
 
-  const customCount = filtered.filter(([, d]) => d.isCustom).length
+  const customCount  = filtered.filter(([, d]) => d.isCustom).length
   const builtInCount = filtered.filter(([, d]) => !d.isCustom).length
 
   return (
@@ -55,10 +84,8 @@ export default function Categories() {
       />
 
       {/* Search bar */}
-      <div
-        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
-        style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}
-      >
+      <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
+        style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
         <Search size={14} style={{ color: 'var(--t3)', flexShrink: 0 }} />
         <input
           value={search}
@@ -74,13 +101,15 @@ export default function Categories() {
         )}
       </div>
 
+      {loadingDb && (
+        <div className="text-xs text-muted text-center py-2">Loading courses...</div>
+      )}
+
       {/* No results */}
-      {filtered.length === 0 && (
-        <motion.div
-          className="rounded-2xl p-10 text-center"
+      {filtered.length === 0 && !loadingDb && (
+        <motion.div className="rounded-2xl p-10 text-center"
           style={{ background: 'var(--bg1)', border: '1px dashed var(--border)' }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        >
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="text-4xl mb-3">🔍</div>
           <h3 className="font-display font-bold text-base text-primary mb-2">No courses found</h3>
           <p className="text-sm text-secondary mb-5">
@@ -97,12 +126,12 @@ export default function Categories() {
         </motion.div>
       )}
 
-      {/* Custom courses */}
+      {/* Custom/DB courses */}
       {customCount > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display font-semibold text-sm text-primary">
-              My Courses
+              Courses
               <span className="ml-2 text-xs font-normal text-muted">({customCount})</span>
             </h2>
           </div>
@@ -121,7 +150,7 @@ export default function Categories() {
         <div>
           {customCount > 0 && (
             <h2 className="font-display font-semibold text-sm text-primary mb-3">
-              Available Courses
+              Built-in Courses
               <span className="ml-2 text-xs font-normal text-muted">({builtInCount})</span>
             </h2>
           )}
@@ -135,7 +164,7 @@ export default function Categories() {
         </div>
       )}
 
-      {/* Upload prompt for neutral / new users */}
+      {/* Upload prompt */}
       <motion.div
         className="rounded-2xl p-5 flex items-center gap-4"
         style={{ background: 'var(--bg1)', border: '1px dashed var(--border)' }}
@@ -143,10 +172,8 @@ export default function Categories() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)' }}
-        >
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)' }}>
           <Upload size={20} style={{ color: 'var(--accent)' }} />
         </div>
         <div className="flex-1">

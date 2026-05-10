@@ -8,17 +8,19 @@ import MobileNav from './MobileNav'
 import { PAGE_TITLES } from './PageWrapper'
 
 export default function AppShell() {
-  const location   = useLocation()
+  const location = useLocation()
   const [sidebarOpen,      setSidebarOpen]      = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem('qa_sb_collapsed') === 'true'
   )
-
-  const title = PAGE_TITLES[location.pathname] || 'Quiz Academy'
   const mainRef = useRef(null)
+  const title   = PAGE_TITLES[location.pathname] || 'Quiz Academy'
 
+  // Instant scroll to top on every route change — no animation lag
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0
+    }
   }, [location.pathname])
 
   function toggleCollapse() {
@@ -38,7 +40,7 @@ export default function AppShell() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg0)' }}>
 
-      {/* ── Desktop sidebar ── */}
+      {/* Desktop sidebar */}
       <div className="hidden md:flex flex-shrink-0">
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -47,21 +49,21 @@ export default function AppShell() {
         />
       </div>
 
-      {/* ── Mobile sidebar overlay ── */}
+      {/* Mobile sidebar overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
             <motion.div
-              className="fixed left-0 right-0 z-40 md:hidden"
-              style={{ top: '56px', bottom: '57px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
+              className="fixed inset-0 z-40 md:hidden"
+              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{   opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
             />
             <motion.div
-              className="fixed left-0 z-50 md:hidden overflow-y-auto"
-              style={{ top: '56px', bottom: '57px', width: 'min(232px, 80vw)' }}
+              className="fixed left-0 top-0 bottom-0 z-50 md:hidden"
+              style={{ width: 'min(232px, 80vw)' }}
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{   x: '-100%' }}
@@ -73,11 +75,8 @@ export default function AppShell() {
         )}
       </AnimatePresence>
 
-      {/* ── Main content area ── */}
-      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-
-        {/* Topbar spacer */}
-        <div className="h-14 flex-shrink-0" />
+      {/* Main content */}
+      <div className="flex flex-col flex-1 min-h-0 min-w-0">
 
         <Topbar
           onMenuClick={() => setSidebarOpen(true)}
@@ -86,18 +85,18 @@ export default function AppShell() {
           title={title}
         />
 
-        {/* Page content */}
+        {/* Scrollable page area — full height minus topbar */}
         <main
           ref={mainRef}
           className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6"
-          style={{ scrollBehavior: 'auto', overscrollBehavior: 'none', WebkitOverflowScrolling: 'touch' }}
+          style={{ WebkitOverflowScrolling: 'touch', minHeight: 0 }}
         >
           <Outlet />
         </main>
       </div>
 
-      {/* ── Mobile bottom nav ── */}
+      {/* Mobile bottom nav */}
       <MobileNav />
     </div>
   )
-} 
+}

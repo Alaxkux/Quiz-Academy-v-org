@@ -1,21 +1,124 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Search } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, X } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi } from '../../api/auth'
 import { getLevelInfo, calculateSmartAverage } from '../../data/levels'
 import { fmtNum } from '../../utils/format'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import Avatar from '../../components/ui/Avatar'
+import ProgressBar from '../../components/ui/ProgressBar'
 import { SkeletonPage } from '../../components/ui/Skeleton'
 
-function UserCard({ user, isMe, index }) {
+// ── User profile popup (public info only) ──
+function UserProfileModal({ user, isMe, onClose }) {
+  if (!user) return null
+  const xpInfo = getLevelInfo(user.stats?.totalXP || 0)
+  const avg    = user.history?.length ? calculateSmartAverage(user.history) : 0
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={e => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          className="w-full max-w-sm rounded-2xl overflow-hidden"
+          style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0,  scale: 1    }}
+          exit={{   opacity: 0, y: 40, scale: 0.96  }}
+          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+            <span className="font-display font-bold text-sm text-primary">
+              {isMe ? 'Your Profile' : 'User Profile'}
+            </span>
+            <button onClick={onClose} className="p-1 rounded-lg text-muted hover:text-primary transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Profile card */}
+          <div className="p-5 flex flex-col items-center gap-3 text-center">
+            <Avatar src={user.avatar} name={user.name} size="xl" />
+
+            <div>
+              <h2 className="font-display font-bold text-lg text-primary flex items-center gap-2 justify-center">
+                {user.name}
+                {isMe && (
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'var(--accent)', color: '#fff', fontSize: 9 }}>
+                    You
+                  </span>
+                )}
+              </h2>
+              {user.bio && (
+                <p className="text-sm text-secondary mt-1 max-w-xs">{user.bio}</p>
+              )}
+            </div>
+
+            {/* Level badge */}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full"
+              style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)' }}>
+              <span>{xpInfo.current.emoji}</span>
+              <span className="font-display font-bold text-sm" style={{ color: 'var(--accent)' }}>
+                Level {xpInfo.current.level} — {xpInfo.current.title}
+              </span>
+            </div>
+
+            {/* XP bar */}
+            <div className="w-full">
+              <div className="flex justify-between text-xs text-muted mb-1">
+                <span>{fmtNum(xpInfo.xpIntoLevel)} XP</span>
+                <span>{xpInfo.next ? fmtNum(xpInfo.xpForNextLevel) + ' to next' : 'MAX'}</span>
+              </div>
+              <ProgressBar
+                value={xpInfo.xpIntoLevel}
+                max={xpInfo.xpForNextLevel}
+                height={4}
+                color="linear-gradient(90deg, var(--accent), var(--green))"
+              />
+            </div>
+
+            {/* Public stats only */}
+            <div className="grid grid-cols-3 gap-2 w-full">
+              {[
+                { label: 'Quizzes',  value: user.stats?.quizzesTaken || 0 },
+                { label: 'Points',   value: fmtNum(user.stats?.totalPoints || 0) },
+                { label: 'Avg Score', value: avg > 0 ? `${avg}%` : '—' },
+              ].map(s => (
+                <div key={s.label} className="rounded-xl py-2.5 text-center"
+                  style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+                  <div className="font-display font-bold text-base text-primary">{s.value}</div>
+                  <div className="text-xs text-muted">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Join date — public info */}
+            <p className="text-xs text-muted">
+              Joined {new Date(user.joinDate || user.createdAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+function UserCard({ user, isMe, index, onClick }) {
   const xpInfo = getLevelInfo(user.stats?.totalXP || 0)
   const avg    = user.history?.length ? calculateSmartAverage(user.history) : 0
 
   return (
     <motion.div
-      className="flex items-center gap-3 p-4 rounded-2xl"
+      className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"
       style={{
         background: isMe ? 'var(--accent-dim)' : 'var(--bg1)',
         border:     `1px solid ${isMe ? 'var(--accent-border)' : 'var(--border)'}`,
@@ -23,56 +126,43 @@ function UserCard({ user, isMe, index }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.22 }}
+      onClick={onClick}
     >
       <Avatar src={user.avatar} name={user.name} size="md" />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-display font-semibold text-sm text-primary truncate">
-            {user.name}
-          </span>
+          <span className="font-display font-semibold text-sm text-primary truncate">{user.name}</span>
           {isMe && (
-            <span
-              className="text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
-              style={{ background: 'var(--accent)', color: '#fff', fontSize: 9 }}
-            >
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: 'var(--accent)', color: '#fff', fontSize: 9 }}>
               You
             </span>
           )}
         </div>
-
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span
-            className="text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{
-              background: 'var(--accent-dim)',
-              border:     '1px solid var(--accent-border)',
-              color:      'var(--accent)',
-            }}
-          >
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}>
             Lv.{xpInfo.current.level} {xpInfo.current.title} {xpInfo.current.emoji}
           </span>
         </div>
       </div>
 
       <div className="text-right flex-shrink-0">
-        <div className="font-display font-bold text-sm text-primary">
-          {fmtNum(user.stats?.totalPoints || 0)}
-        </div>
+        <div className="font-display font-bold text-sm text-primary">{fmtNum(user.stats?.totalPoints || 0)}</div>
         <div className="text-xs text-muted">{user.stats?.quizzesTaken || 0} quizzes</div>
-        {avg > 0 && (
-          <div className="text-xs text-muted">{avg}% avg</div>
-        )}
+        {avg > 0 && <div className="text-xs text-muted">{avg}% avg</div>}
       </div>
     </motion.div>
   )
 }
 
 export default function Users() {
-  const { user: me }       = useAuth()
-  const [users,   setUsers]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search,  setSearch]  = useState('')
+  const { user: me }              = useAuth()
+  const [users,    setUsers]      = useState([])
+  const [loading,  setLoading]    = useState(true)
+  const [search,   setSearch]     = useState('')
+  const [selected, setSelected]   = useState(null)
 
   useEffect(() => {
     authApi.getLeaderboard()
@@ -85,11 +175,9 @@ export default function Users() {
 
   const filtered = users.filter(u =>
     !search.trim() ||
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase())
+    u.name.toLowerCase().includes(search.toLowerCase())
   )
 
-  // Sort: me first, then by points
   const sorted = [...filtered].sort((a, b) => {
     if (a.email === me?.email) return -1
     if (b.email === me?.email) return 1
@@ -103,11 +191,8 @@ export default function Users() {
         subtitle={`${users.length} learner${users.length !== 1 ? 's' : ''} registered`}
       />
 
-      {/* Search */}
-      <div
-        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
-        style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}
-      >
+      <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
+        style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
         <Search size={14} style={{ color: 'var(--t3)', flexShrink: 0 }} />
         <input
           value={search}
@@ -124,10 +209,8 @@ export default function Users() {
       </div>
 
       {sorted.length === 0 ? (
-        <div
-          className="rounded-2xl p-12 text-center"
-          style={{ background: 'var(--bg1)', border: '1px dashed var(--border)' }}
-        >
+        <div className="rounded-2xl p-12 text-center"
+          style={{ background: 'var(--bg1)', border: '1px dashed var(--border)' }}>
           <div className="text-5xl mb-3">👤</div>
           <h3 className="font-display font-bold text-base text-primary mb-2">
             {search ? 'No users found' : 'No other users yet'}
@@ -144,9 +227,19 @@ export default function Users() {
               user={u}
               isMe={u.email === me?.email}
               index={i}
+              onClick={() => setSelected(u)}
             />
           ))}
         </div>
+      )}
+
+      {/* Profile popup */}
+      {selected && (
+        <UserProfileModal
+          user={selected}
+          isMe={selected.email === me?.email}
+          onClose={() => setSelected(null)}
+        />
       )}
     </PageWrapper>
   )

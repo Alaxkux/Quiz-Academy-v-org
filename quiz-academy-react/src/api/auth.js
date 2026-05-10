@@ -50,6 +50,10 @@ export const authApi = {
     return client.post('/auth/reset-password', { token, password })
   },
 
+  async changePassword({ currentPassword, newPassword }) {
+    return client.post('/auth/change-password', { currentPassword, newPassword })
+  },
+
   async getConfig() {
     return client.get('/auth/config').catch(() => ({}))
   },

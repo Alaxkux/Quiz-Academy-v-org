@@ -24,7 +24,7 @@ const NAV = [
     section: 'Study',
     items: [
       { to: '/brainstorm', label: 'Brainstorming',  icon: Brain },
-      { to: '/planner',    label: 'Study Planner',  icon: Calendar },
+      { to: '/planner',    label: 'Study Planner',  icon: Calendar, wide: true },
       { to: '/builder',    label: 'Course Builder', icon: Hammer },
     ]
   },
@@ -86,12 +86,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
           )}
         </AnimatePresence>
 
-        {/* Mobile close btn */}
-        {isMobile && (
-          <button onClick={onClose} className="ml-auto p-1 rounded-lg text-muted hover:text-primary transition-colors">
-            <X size={16} />
-          </button>
-        )}
+        {/* Mobile close btn — removed, tap backdrop to close instead */}
       </div>
 
       {/* ── User chip ── */}
@@ -167,6 +162,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
                 className={({ isActive }) =>
                   `flex items-center py-2.5 text-sm transition-all relative border-l-2
                    ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
+                   ${item.wide && !collapsed ? 'col-span-2' : ''}
                    ${isActive ? 'font-medium' : 'border-transparent hover:opacity-80'}`
                 }
                 style={({ isActive }) => isActive

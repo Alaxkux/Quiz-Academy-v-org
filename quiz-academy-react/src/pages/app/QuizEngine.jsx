@@ -62,7 +62,7 @@ function QuitModal({ open, onClose, onConfirm }) {
 
 export default function QuizEngine() {
   const navigate      = useNavigate()
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, addNotification } = useAuth()
   const {
     quiz, timeElapsed, isActive,
     selectAnswer, nextQuestion, prevQuestion,
@@ -145,10 +145,10 @@ export default function QuizEngine() {
     selectAnswer(idx)
   }
 
-  function handleNext() {
+  function handleNext(force = false) {
     if (!quiz) return
     const hasAnswer = quiz.answers[quiz.currentIndex] !== undefined
-    if (!hasAnswer) return
+    if (!hasAnswer && !force) return
     expiredRef.current = false
 
     const result = nextQuestion()
@@ -168,13 +168,13 @@ export default function QuizEngine() {
     if (!quiz) return
     if (expiredRef.current) return   // guard against double-fire
     expiredRef.current = true
-    // Auto-record as skipped (-1) then move next
+    // Auto-record as skipped (-1) then force move to next
     if (quiz.answers[quiz.currentIndex] === undefined) {
       selectAnswer(-1)
     }
     setTimeout(() => {
       expiredRef.current = false
-      handleNext()
+      handleNext(true) // force skip regardless of answer
     }, 800)
   }
 
@@ -224,6 +224,15 @@ export default function QuizEngine() {
         achievements:       updatedList,
         lastDailyChallenge,
       })
+
+      // Fire notifications
+      addNotification(`🎯 Quiz complete! You scored ${result.percentage}% on ${result.category}`, result.percentage >= 80 ? 'success' : 'info')
+      newAchievements.forEach(ach => {
+        addNotification(`🏆 Achievement unlocked: ${ach.name}`, 'success')
+      })
+      if (result.isDailyChallenge) {
+        addNotification('⭐ Daily Challenge completed! +150 XP bonus', 'success')
+      }
 
       navigate('/quiz/results', {
         state: { result, newAchievements },

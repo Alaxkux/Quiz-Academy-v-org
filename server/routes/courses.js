@@ -15,9 +15,17 @@ const { requireAuth, requireAdmin } = require('../middleware/auth')
 router.get('/', async (req, res) => {
   try {
     const courses = await Course.find({ isActive: true })
-      .select('code icon color description isCustom createdAt')
+      .select('code icon color description isCustom createdAt questions')
       .sort({ code: 1 })
-    res.json({ courses })
+    res.json({ courses: courses.map(c => ({
+      code: c.code,
+      icon: c.icon,
+      color: c.color,
+      description: c.description,
+      isCustom: c.isCustom,
+      createdAt: c.createdAt,
+      questionCount: c.questions?.length || 0,
+    })) })
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch courses' })
   }
