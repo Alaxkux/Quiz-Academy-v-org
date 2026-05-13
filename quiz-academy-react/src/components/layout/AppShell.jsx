@@ -89,7 +89,12 @@ export default function AppShell() {
         <main
           ref={mainRef}
           className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6"
-          style={{ WebkitOverflowScrolling: 'touch', minHeight: 0 }}
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            scrollBehavior: 'auto',
+            overscrollBehavior: 'none',
+            minHeight: 0,
+          }}
         >
           <Outlet />
         </main>
