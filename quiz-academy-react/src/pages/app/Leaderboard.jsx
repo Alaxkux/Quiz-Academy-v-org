@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi } from '../../api/auth'
 import { weeklyPoints } from '../../utils/format'
@@ -7,39 +8,55 @@ import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import PodiumTop3 from '../../components/leaderboard/PodiumTop3'
 import LeaderRow from '../../components/leaderboard/LeaderRow'
 import { SkeletonPage } from '../../components/ui/Skeleton'
+import Button from '../../components/ui/Button'
 
 export default function Leaderboard() {
   const { user }       = useAuth()
   const [allUsers, setAllUsers] = useState([])
   const [tab,      setTab]      = useState('alltime')
   const [loading,  setLoading]  = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      const data = await authApi.getLeaderboard()
+      setAllUsers(data.users || [])
+    } catch {
+      setAllUsers([])
+    }
+  }, [])
 
   useEffect(() => {
-    authApi.getLeaderboard()
-      .then(data => setAllUsers(data.users || []))
-      .catch(() => setAllUsers([]))
-      .finally(() => setLoading(false))
-  }, [])
+    fetchLeaderboard().finally(() => setLoading(false))
+  }, [fetchLeaderboard])
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    await fetchLeaderboard()
+    setRefreshing(false)
+  }
 
   if (loading) return <PageWrapper><SkeletonPage /></PageWrapper>
 
   const sorted = [...allUsers].sort((a, b) =>
     tab === 'alltime'
       ? (b.stats?.totalPoints || 0) - (a.stats?.totalPoints || 0)
-      : weeklyPoints(b.history || []) - weeklyPoints(a.history || [])
+      : (b.stats?.totalPoints || 0) - (a.stats?.totalPoints || 0) // weekly fallback (history stripped server-side)
   )
 
-  const pointsFn = tab === 'alltime'
-    ? u => u.stats?.totalPoints  || 0
-    : u => weeklyPoints(u.history || [])
-
-  const myRank = sorted.findIndex(u => u.email === user?.email) + 1
+  const pointsFn = u => u.stats?.totalPoints || 0
+  const myRank   = sorted.findIndex(u => u.email === user?.email) + 1
 
   return (
     <PageWrapper>
       <PageHeader
         title="🏆 Leaderboard"
         subtitle={`${allUsers.length} learner${allUsers.length !== 1 ? 's' : ''} competing`}
+        action={
+          <Button variant="ghost" size="sm" onClick={handleRefresh} loading={refreshing}>
+            <RefreshCw size={14} /> Refresh
+          </Button>
+        }
       />
 
       {/* Tabs */}
@@ -67,7 +84,6 @@ export default function Leaderboard() {
         </div>
       ) : (
         <>
-          {/* Podium */}
           {sorted.length >= 2 && (
             <div className="rounded-2xl overflow-hidden"
               style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
@@ -75,7 +91,6 @@ export default function Leaderboard() {
             </div>
           )}
 
-          {/* Rows for 4th+ */}
           {sorted.length > 3 && (
             <div className="flex flex-col gap-2">
               {sorted.slice(3).map((u, i) => (
@@ -85,7 +100,6 @@ export default function Leaderboard() {
             </div>
           )}
 
-          {/* If only 1-3 users, show rows instead of podium rows */}
           {sorted.length <= 3 && (
             <div className="flex flex-col gap-2">
               {sorted.map((u, i) => (
@@ -95,7 +109,6 @@ export default function Leaderboard() {
             </div>
           )}
 
-          {/* Pinned my rank if outside top 10 */}
           {myRank > 10 && (
             <motion.div className="rounded-2xl p-3"
               style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)' }}

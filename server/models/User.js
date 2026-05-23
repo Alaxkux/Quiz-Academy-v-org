@@ -18,7 +18,7 @@ const QuizHistorySchema = new mongoose.Schema({
   timeTakenSeconds: { type: Number },
   isDailyChallenge: { type: Boolean, default: false },
   questionData:     { type: Array,   default: [] }
-}, { _id: false });
+}, { _id: true });  // _id enabled for stable history entry references
 
 const UserSchema = new mongoose.Schema({
   name: {

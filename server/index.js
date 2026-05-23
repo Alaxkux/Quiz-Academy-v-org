@@ -103,8 +103,10 @@ function scheduleDailyReminder() {
   const msUntil = next8pm - now;
 
   setTimeout(() => {
-    sendStreakReminders();
-    setInterval(sendStreakReminders, 24 * 60 * 60 * 1000);
+    try { sendStreakReminders(); } catch(e) { console.error('Push reminder error:', e.message); }
+    setInterval(() => {
+      try { sendStreakReminders(); } catch(e) { console.error('Push reminder error:', e.message); }
+    }, 24 * 60 * 60 * 1000);
   }, msUntil);
 
   console.log(

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, Plus, Upload } from 'lucide-react'
+import { Search, Plus, Upload, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { getAllCourses } from '../../data/quizData'
@@ -44,6 +44,28 @@ export default function Categories() {
       .finally(() => setLoadingDb(false))
   }, [])
 
+  function handleRefresh() {
+    setLoadingDb(true)
+    coursesApi.getAll()
+      .then(data => {
+        const map = {}
+        ;(data.courses || []).forEach(c => {
+          map[c.code] = {
+            name:        c.code,
+            description: c.description || '',
+            icon:        c.icon || '📚',
+            color:       c.color || 'rgba(108,142,255,.12)',
+            isCustom:    true,
+            fromDb:      true,
+            questions:   { length: c.questionCount || 0 },
+          }
+        })
+        setDbCourses(map)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDb(false))
+  }
+
   const history    = user?.history || []
   const localCourses = getAllCourses()
 
@@ -73,6 +95,9 @@ export default function Categories() {
         subtitle="Click any course to configure and start your quiz"
         action={
           <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={handleRefresh} loading={loadingDb} title="Refresh courses">
+              <RefreshCw size={14} />
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate('/builder')}>
               <Plus size={14} /> New Course
             </Button>

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Trash2, Users, BookOpen, Lock, KeyRound, Eye, EyeOff, RefreshCw, Crown } from 'lucide-react'
 import { adminApi } from '../../api/admin'
+import { coursesApi } from '../../api/courses'
+import QuestionUploader from '../../components/admin/QuestionUploader'
 import { useAuth } from '../../hooks/useAuth'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import Button from '../../components/ui/Button'
@@ -367,6 +369,56 @@ function UserRow({ user, onDelete, isMe }) {
 // ─────────────────────────────────────────────
 // MAIN ADMIN DASHBOARD
 // ─────────────────────────────────────────────
+// ── Question Upload Panel ──
+function QuestionUploadPanel({ courses }) {
+  const [selectedCourse, setSelectedCourse] = useState('')
+  const [uploadCount, setUploadCount] = useState(null)
+
+  return (
+    <div className="rounded-2xl p-5 flex flex-col gap-4"
+      style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
+      <div>
+        <h3 className="font-display font-bold text-sm text-primary mb-1">
+          📤 Upload Questions to Course
+        </h3>
+        <p className="text-xs text-secondary">
+          Add questions directly to any course in MongoDB. Paste JSON or upload a .json file.
+        </p>
+      </div>
+
+      {/* Course selector */}
+      <div>
+        <label className="text-xs text-muted mb-1 block">Select Course</label>
+        <select
+          value={selectedCourse}
+          onChange={e => setSelectedCourse(e.target.value)}
+          className="w-full text-sm rounded-xl px-3 py-2.5 outline-none"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t1)' }}
+        >
+          <option value="">— Choose a course —</option>
+          {courses.map(c => (
+            <option key={c.code} value={c.code}>
+              {c.icon} {c.code} {c.questionCount !== undefined ? `(${c.questionCount} questions)` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {selectedCourse ? (
+        <QuestionUploader
+          courseCode={selectedCourse}
+          onSuccess={data => setUploadCount(data.total)}
+        />
+      ) : (
+        <div className="rounded-xl py-8 text-center text-sm text-muted"
+          style={{ background: 'var(--bg2)', border: '1px dashed var(--border)' }}>
+          Select a course above to start uploading questions
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
   const { user: me }            = useAuth()
   const navigate                = useNavigate()
@@ -375,8 +427,9 @@ export default function AdminDashboard() {
   const [pinLoading, setPinLoading] = useState(true)
   const [users,    setUsers]    = useState([])
   const [loading,  setLoading]  = useState(false)
-  const [msg,      setMsg]      = useState(null)  // { text, undoFn } | null
-  const [pinModal, setPinModal] = useState(false)
+  const [msg,          setMsg]          = useState(null)  // { text, undoFn } | null
+  const [pinModal,     setPinModal]     = useState(false)
+  const [dbCourseList, setDbCourseList] = useState([])
 
   // Check PIN status from MongoDB on mount
   useEffect(() => {
@@ -391,6 +444,8 @@ export default function AdminDashboard() {
     try {
       const data = await adminApi.getUsers()
       setUsers(data.users || [])
+      // Also load courses for upload panel
+      coursesApi.getAll().then(d => setDbCourseList(d.courses || [])).catch(() => {})
     } catch (e) {
       notify('❌ ' + e.message)
     } finally {
@@ -500,11 +555,17 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick links */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button variant="secondary" size="sm" onClick={() => navigate('/courses/manage')}>
           <BookOpen size={14} /> Manage Courses
         </Button>
+        <Button variant="ghost" size="sm" onClick={loadUsers} loading={loading} title="Refresh user list">
+          <RefreshCw size={14} /> Refresh Users
+        </Button>
       </div>
+
+      {/* ── Question Upload Panel ── */}
+      <QuestionUploadPanel courses={dbCourseList} />
 
       {/* Notification with undo */}
       <AnimatePresence>

@@ -10,6 +10,11 @@ export default function CourseCard({ id, data, history = [], index = 0 }) {
   const best     = attempts.length ? Math.max(...attempts.map(h => h.percentage)) : null
   const isCustom = !!data.isCustom
 
+  // Show real count: prefer array length (local quizData), fall back to numeric count (DB)
+  const questionCount = Array.isArray(data.questions)
+    ? data.questions.length
+    : (typeof data.questions?.length === 'number' ? data.questions.length : 0)
+
   function handleClick() {
     navigate('/quiz/config', { state: { category: id } })
   }
@@ -59,7 +64,7 @@ export default function CourseCard({ id, data, history = [], index = 0 }) {
           className="text-xs px-2 py-0.5 rounded-lg"
           style={{ background: 'var(--bg2)', color: 'var(--t3)' }}
         >
-          {data.questions?.length || 0} questions
+          {questionCount} question{questionCount !== 1 ? 's' : ''}
         </span>
         {attempts.length > 0 && (
           <span

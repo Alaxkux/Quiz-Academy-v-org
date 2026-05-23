@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -9,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { getLevelInfo } from '../../data/levels'
 import Avatar from '../ui/Avatar'
 import ProgressBar from '../ui/ProgressBar'
+import Modal from '../ui/Modal'
 
 const NAV = [
   {
@@ -43,6 +45,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const xpInfo   = user ? getLevelInfo(user.stats?.totalXP || 0) : null
+
+  const [logoutOpen, setLogoutOpen] = useState(false)
 
   async function handleLogout() {
     await logout()
@@ -240,7 +244,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
           {!collapsed && <span>Settings</span>}
         </NavLink>
         <button
-          onClick={handleLogout}
+          onClick={() => setLogoutOpen(true)}
           title={collapsed ? 'Sign out' : undefined}
           className={`w-full flex items-center py-2 text-sm transition-colors text-muted hover:text-red
             ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}`}
@@ -248,6 +252,33 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
           <LogOut size={15} className="flex-shrink-0" />
           {!collapsed && <span>Sign out</span>}
         </button>
+
+      <Modal
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        icon="🚪"
+        title="Sign Out?"
+      >
+        <p className="text-secondary text-sm mb-5">
+          Are you sure you want to sign out of Quiz Academy?
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setLogoutOpen(false)}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t2)' }}
+          >
+            Stay
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white transition-colors"
+            style={{ background: 'var(--red)' }}
+          >
+            Sign Out
+          </button>
+        </div>
+      </Modal>
       </div>
     </aside>
   )

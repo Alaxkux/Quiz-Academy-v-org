@@ -101,18 +101,35 @@ export default function QuizEngine() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [])
 
-  // visibilitychange — tab switch
-  useEffect(() => {
-    const handler = () => {
-      if (document.hidden && isActive) {
-        const count = tabLeft()
-        setTabCount(count)
-        setTimeout(() => setTabOpen(true), 200)
-      }
+ // visibilitychange — tab switch: show warning AND blur the page to pull focus back
+useEffect(() => {
+  const handler = () => {
+    if (document.hidden && isActive) {
+      const count = tabLeft()
+      setTabCount(count)
+      setTimeout(() => {
+        setTabOpen(true)
+        // Force focus back to this window when user returns
+        window.focus()
+      }, 200)
     }
-    document.addEventListener('visibilitychange', handler)
-    return () => document.removeEventListener('visibilitychange', handler)
-  }, [isActive])
+  }
+  document.addEventListener('visibilitychange', handler)
+  return () => document.removeEventListener('visibilitychange', handler)
+}, [isActive])
+
+// focusout guard — prevent keyboard/click focus leaving the quiz area
+useEffect(() => {
+  if (!isActive) return
+  const handler = (e) => {
+    // If focus tries to leave the document (e.g. address bar, another tab via keyboard)
+    if (!document.hasFocus()) {
+      window.focus()
+    }
+  }
+  window.addEventListener('blur', handler)
+  return () => window.removeEventListener('blur', handler)
+}, [isActive])
 
   // popstate — back button
   useEffect(() => {
@@ -231,7 +248,7 @@ export default function QuizEngine() {
         addNotification(`🏆 Achievement unlocked: ${ach.name}`, 'success')
       })
       if (result.isDailyChallenge) {
-        addNotification('⭐ Daily Challenge completed! +150 XP bonus', 'success')
+        addNotification('⭐ Daily Challenge completed! +50 XP bonus', 'success')
       }
 
       navigate('/quiz/results', {
@@ -262,7 +279,7 @@ export default function QuizEngine() {
 
   return (
     <div
-      className="flex flex-col gap-3 max-w-2xl mx-auto w-full animate-fade-in pb-24 md:pb-6"
+      className="flex flex-col gap-3 w-full animate-fade-in pb-24 md:pb-6"
       style={{ minHeight: '80vh' }}
     >
       {/* ── Topbar ── */}

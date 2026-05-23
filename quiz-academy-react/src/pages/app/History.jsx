@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { historyApi } from '../../api/quiz'
 import { dateGroup, scoreColor, scoreEmoji, fmtNum } from '../../utils/format'
@@ -8,7 +9,7 @@ import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import { SkeletonPage } from '../../components/ui/Skeleton'
 import Button from '../../components/ui/Button'
 
-function HistoryItem({ entry, realIndex, onClick }) {
+function HistoryItem({ entry, onClick }) {
   const emoji = scoreEmoji(entry.percentage)
   const color = scoreColor(entry.percentage)
 
@@ -61,11 +62,10 @@ export default function History() {
   const [hasMore,  setHasMore]  = useState(false)
   const [total,    setTotal]    = useState(0)
   const [loading,  setLoading]  = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  useEffect(() => { loadPage(1, true) }, [])
-
-  async function loadPage(p, reset = false) {
+  const loadPage = useCallback(async (p, reset = false) => {
     if (reset) setLoading(true)
     else setLoadingMore(true)
     try {
@@ -75,7 +75,6 @@ export default function History() {
       setTotal(data.total)
       setPage(p)
     } catch {
-      // Fallback to local user history
       const local = (user?.history || []).slice().reverse()
       setItems(local.map((h, i) => ({ ...h, _index: (user.history.length - 1 - i), hasReview: !!h.questionData?.length })))
       setTotal(local.length)
@@ -84,10 +83,17 @@ export default function History() {
       setLoading(false)
       setLoadingMore(false)
     }
+  }, [user])
+
+  useEffect(() => { loadPage(1, true) }, [])
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    await loadPage(1, true)
+    setRefreshing(false)
   }
 
   async function handleClick(entry) {
-    // Try to get questionData from server if not present
     if (entry.hasReview !== false) {
       try {
         const data = await historyApi.getEntry(entry._index)
@@ -96,7 +102,6 @@ export default function History() {
           return
         }
       } catch {
-        // If local entry has questionData, use it
         const local = user?.history?.[entry._index]
         if (local?.questionData?.length) {
           navigate('/quiz/review', { state: { result: local } })
@@ -111,7 +116,15 @@ export default function History() {
   if (!items.length) {
     return (
       <PageWrapper>
-        <PageHeader title="📊 History" subtitle="Your past quiz performances" />
+        <PageHeader
+          title="📊 History"
+          subtitle="Your past quiz performances"
+          action={
+            <Button variant="ghost" size="sm" onClick={handleRefresh} loading={refreshing}>
+              <RefreshCw size={14} /> Refresh
+            </Button>
+          }
+        />
         <div className="rounded-2xl p-12 text-center" style={{ background: 'var(--bg1)', border: '1px dashed var(--border)' }}>
           <div className="text-5xl mb-3">📋</div>
           <h3 className="font-display font-bold text-base text-primary mb-2">No history yet</h3>
@@ -122,7 +135,6 @@ export default function History() {
     )
   }
 
-  // Group by date label
   const grouped = {}
   items.forEach(entry => {
     const group = dateGroup(entry.date)
@@ -138,6 +150,11 @@ export default function History() {
       <PageHeader
         title="📊 History"
         subtitle={`${fmtNum(total)} quiz${total !== 1 ? 'zes' : ''} completed · Tap any to review`}
+        action={
+          <Button variant="ghost" size="sm" onClick={handleRefresh} loading={refreshing}>
+            <RefreshCw size={14} /> Refresh
+          </Button>
+        }
       />
 
       <div className="flex flex-col gap-4">
@@ -151,12 +168,7 @@ export default function History() {
               style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}
             >
               {grouped[group].map((entry, i) => (
-                <HistoryItem
-                  key={i}
-                  entry={entry}
-                  realIndex={entry._index}
-                  onClick={() => handleClick(entry)}
-                />
+                <HistoryItem key={i} entry={entry} onClick={() => handleClick(entry)} />
               ))}
             </div>
           </div>
@@ -164,13 +176,8 @@ export default function History() {
       </div>
 
       {hasMore && (
-        <Button
-          variant="secondary"
-          size="md"
-          className="w-full"
-          loading={loadingMore}
-          onClick={() => loadPage(page + 1)}
-        >
+        <Button variant="secondary" size="md" className="w-full" loading={loadingMore}
+          onClick={() => loadPage(page + 1)}>
           Load More
         </Button>
       )}

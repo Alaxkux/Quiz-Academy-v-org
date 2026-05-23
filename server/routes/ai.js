@@ -9,6 +9,11 @@ const express   = require('express');
 const rateLimit = require('express-rate-limit');
 const { requireAuth } = require('../middleware/auth');
 
+// ── Eagerly loaded so errors surface at startup, not at request time ──
+const multer   = require('multer');
+const pdfParse = require('pdf-parse');
+const pdfUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
 const router = express.Router();
 
 // ── Rate limit: 10 AI requests per user per minute ──
@@ -138,11 +143,7 @@ router.post('/from-pdf', requireAuth, aiLimiter, async (req, res) => {
       return res.status(503).json({ error: 'AI service not configured' })
 
     // Handle multipart form — use multer in memory
-    const multer   = require('multer')
-    const pdfParse = require('pdf-parse')
-    const upload   = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
-
-    upload.single('pdf')(req, res, async (err) => {
+    pdfUpload.single('pdf')(req, res, async (err) => {
       if (err) return res.status(400).json({ error: 'Upload failed: ' + err.message })
       if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' })
 

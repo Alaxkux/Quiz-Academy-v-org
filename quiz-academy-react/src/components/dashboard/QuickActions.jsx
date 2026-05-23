@@ -101,6 +101,7 @@ export default function QuickActions({ user, hasInProgress = false }) {
       onClick: () => navigate('/planner'),
       delay:  0.4,
       progress: todayProg.pct,
+      wide: true, 
     },
   ].filter(Boolean)
 
@@ -108,12 +109,12 @@ export default function QuickActions({ user, hasInProgress = false }) {
     <div>
       <h2 className="font-display font-semibold text-sm text-primary mb-3">Quick Actions</h2>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
-        {actions.map((a, i) => (
-          <div key={i} className="relative">
-            <ActionTile {...a} />
-          </div>
-        ))}
-      </div>
+  {actions.map((a, i) => (
+    <div key={i} className={`relative${a.wide ? ' col-span-2' : ''}`}>
+      <ActionTile {...a} />
+    </div>
+  ))}
+</div>
     </div>
   )
 }

@@ -76,7 +76,7 @@ router.post('/signup', authLimiter, async (req, res) => {
 
     const user  = await User.create({ name, email: email.toLowerCase(), password });
     req.session.userId = user._id.toString();
-    const token = generateToken(user._id.toString());
+    const token = generateToken(user._id.toString(), user.tokenVersion || 0);
     res.status(201).json({ token, user: user.toPublicJSON() });
   } catch (err) {
     console.error('Signup error:', err);
@@ -109,7 +109,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
     req.session.userId = user._id.toString();
     if (rememberMe) req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
-    const token = generateToken(user._id.toString());
+    const token = generateToken(user._id.toString(), user.tokenVersion || 0);
     res.json({ token, user: user.toPublicJSON() });
   } catch (err) {
     console.error('Login error:', err);
@@ -173,7 +173,7 @@ router.post('/google', oauthLimiter, async (req, res) => {
     }
 
     req.session.userId = user._id.toString();
-    const token = generateToken(user._id.toString());
+    const token = generateToken(user._id.toString(), user.tokenVersion || 0);
     res.json({ token, user: user.toPublicJSON() });
   } catch (err) {
     console.error('Google OAuth error:', err);
@@ -213,7 +213,15 @@ router.put('/me', requireAuth, async (req, res) => {
       user.name = clean;
     }
     if (bio      !== undefined) user.bio      = sanitize(bio, 300);
-    if (avatar   !== undefined) user.avatar   = avatar;
+    if (avatar !== undefined) {
+      // Only accept safe URLs (https or data URIs for base64 avatars)
+      if (typeof avatar === 'string' && (
+        avatar.startsWith('https://') ||
+        avatar.startsWith('data:image/')
+      )) {
+        user.avatar = avatar;
+      }
+    }
     if (settings !== undefined) user.settings = { ...user.settings, ...settings };
     if (lastDailyChallenge !== undefined) user.lastDailyChallenge = lastDailyChallenge;
     if (stats        !== undefined) user.stats        = { ...(user.stats.toObject ? user.stats.toObject() : user.stats), ...stats };
@@ -256,9 +264,18 @@ router.post('/sync', requireAuth, async (req, res) => {
 router.get('/leaderboard', requireAuth, async (req, res) => {
   try {
     const users = await User.find({})
-      .select('name avatar stats achievements joinDate history')
+      .select('name avatar stats achievements joinDate')
       .lean();
-    res.json({ users });
+    // Strip sensitive fields and don't expose full history publicly
+    const safeUsers = users.map(u => ({
+      _id:          u._id,
+      name:         u.name,
+      avatar:       u.avatar,
+      stats:        u.stats,
+      achievements: u.achievements,
+      joinDate:     u.joinDate,
+    }));
+    res.json({ users: safeUsers });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }

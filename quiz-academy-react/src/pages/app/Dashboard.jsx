@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { getLevelInfo } from '../../data/levels'
@@ -110,6 +111,15 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => window.location.reload()}
+            className="p-2 rounded-xl text-muted hover:text-primary transition-colors"
+            style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}
+            title="Refresh dashboard"
+          >
+            <RefreshCw size={14} />
+          </button>
         <motion.button
           onClick={() => navigate('/play')}
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium flex-shrink-0"
@@ -125,6 +135,7 @@ export default function Dashboard() {
             <span className="text-muted" style={{ fontSize: 10 }}>{getDailyCountdown()}</span>
           )}
         </motion.button>
+        </div>
       </div>
 
       {/* Recommendation */}

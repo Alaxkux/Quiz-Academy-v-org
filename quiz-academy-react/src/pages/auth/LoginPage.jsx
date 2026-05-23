@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false)
   const [loading,  setLoading]  = useState(false)
   const [errors,   setErrors]   = useState({})
+  const [confirmStep, setConfirmStep] = useState(false) // show "log in as X?" confirm
   const [googleClientId, setGoogleClientId] = useState(null)
   const googleBtnRef = useRef(null)
 
@@ -74,6 +75,11 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e?.preventDefault()
     if (!validate() || loading) return
+    // First click → show confirmation; second click → actually log in
+    if (!confirmStep) {
+      setConfirmStep(true)
+      return
+    }
     setLoading(true)
     try {
       const user = await login(email, password, remember)
@@ -81,6 +87,7 @@ export default function LoginPage() {
       navigate(from, { replace: true })
     } catch (err) {
       setErrors({ password: err.message || 'Invalid email or password' })
+      setConfirmStep(false)
     } finally {
       setLoading(false)
     }
@@ -145,15 +152,37 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <Button
-            variant="primary"
-            size="lg"
-            loading={loading}
-            className="w-full"
-            type="submit"
-          >
-            Sign In
-          </Button>
+          {confirmStep ? (
+            <div className="flex flex-col gap-2">
+              <div className="rounded-xl px-4 py-3 text-sm text-center"
+                style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', color: 'var(--t2)' }}>
+                Log in as <strong style={{ color: 'var(--accent)' }}>{email}</strong>?
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmStep(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-medium transition-colors"
+                  style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t2)' }}
+                >
+                  Cancel
+                </button>
+                <Button variant="primary" size="lg" loading={loading} className="flex-1" type="submit">
+                  Yes, Sign In
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              loading={loading}
+              className="w-full"
+              type="submit"
+            >
+              Sign In
+            </Button>
+          )}
         </form>
 
         <p className="text-center text-sm text-secondary mt-6">

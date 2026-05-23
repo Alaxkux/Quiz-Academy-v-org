@@ -8,13 +8,18 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'No token' });
   }
 
-  // Strip 'Bearer ' prefix if present
   const token = header.startsWith('Bearer ') ? header.slice(7) : header;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) return res.status(401).json({ error: 'User not found' });
+
+    // ── tokenVersion check: invalidates old tokens after password change / logout ──
+    if (decoded.tv !== undefined && decoded.tv !== user.tokenVersion) {
+      return res.status(401).json({ error: 'Session expired — please log in again' });
+    }
+
     req.user = user;
     next();
   } catch (err) {
@@ -22,10 +27,12 @@ async function requireAuth(req, res, next) {
   }
 }
 
-function generateToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d'
-  });
+function generateToken(userId, tokenVersion = 0) {
+  return jwt.sign(
+    { id: userId, tv: tokenVersion },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
 }
 
 function requireAdmin(req, res, next) {

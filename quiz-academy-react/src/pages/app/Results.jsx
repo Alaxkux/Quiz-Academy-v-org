@@ -35,7 +35,7 @@ function ScoreCircle({ percentage }) {
 
   return (
     <div className="relative flex items-center justify-center mx-auto"
-      style={{ width: 160, height: 160 }}>
+      style={{ width: 180, height: 180 }}>
       <svg viewBox="0 0 128 128" className="absolute inset-0 w-full h-full -rotate-90">
         <circle cx="64" cy="64" r={radius} fill="none" stroke="var(--border)" strokeWidth="10" />
         <circle
@@ -47,7 +47,7 @@ function ScoreCircle({ percentage }) {
         />
       </svg>
       <div className="text-center z-10 flex flex-col items-center justify-center">
-        <div className="font-display font-black" style={{ color, fontSize: '2.2rem', lineHeight: 1 }}>
+        <div className="font-display font-black" style={{ color, fontSize: '2.6rem', lineHeight: 1 }}>
           <CountUp target={percentage} suffix="%" color={color} />
         </div>
         <div className="text-xs text-muted mt-1 font-medium">Score</div>
@@ -59,11 +59,11 @@ function ScoreCircle({ percentage }) {
 function StatPill({ label, value, color, raw }) {
   return (
     <div
-      className="flex flex-col items-center justify-center rounded-2xl py-4 px-3"
+      className="flex flex-col items-center justify-center rounded-2xl py-5 px-4"
       style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderTop: `3px solid ${color}` }}
     >
       <div className="font-display font-black leading-none mb-1"
-        style={{ color, fontSize: 'clamp(1.5rem, 4vw, 2rem)' }}>
+        style={{ color, fontSize: 'clamp(1.6rem, 4vw, 2.4rem)' }}>
         {raw
           ? value
           : typeof value === 'number'
@@ -116,7 +116,8 @@ export default function Results() {
 
   return (
     <PageWrapper>
-      <div className="max-w-md mx-auto w-full flex flex-col gap-5">
+      {/* Full-width centered layout — no max-w-md cap */}
+      <div className="flex flex-col gap-6 w-full">
 
         {/* Header */}
         <motion.div
@@ -126,7 +127,7 @@ export default function Results() {
           transition={{ duration: 0.4 }}
         >
           <div className="text-6xl mb-2">{emoji}</div>
-          <h1 className="font-display font-black text-3xl text-primary">{grade}</h1>
+          <h1 className="font-display font-black text-3xl md:text-4xl text-primary">{grade}</h1>
           <p className="text-secondary text-sm mt-1">
             You scored on <strong style={{ color: 'var(--accent)' }}>{category}</strong>
           </p>
@@ -150,22 +151,22 @@ export default function Results() {
           <ScoreCircle percentage={percentage} />
         </motion.div>
 
-        {/* Stats grid */}
+        {/* Stats grid — 4 cols on desktop */}
         <motion.div
-          className="grid grid-cols-2 gap-3"
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <StatPill label="Correct Answers" value={`${score} / ${total}`} color="var(--t1)" raw />
-          <StatPill label="Points Earned"   value={points}   color="var(--green)"  />
-          <StatPill label="XP Earned"       value={xpEarned} color="var(--accent)" />
-          <StatPill label="Time Taken"      value={timeTaken} color="var(--gold)"  raw />
+          <StatPill label="Correct Answers" value={`${score} / ${total}`} color="var(--t1)"    raw />
+          <StatPill label="Points Earned"   value={points}               color="var(--green)"  />
+          <StatPill label="XP Earned"       value={xpEarned}             color="var(--accent)" />
+          <StatPill label="Time Taken"      value={timeTaken}            color="var(--gold)"   raw />
         </motion.div>
 
         {/* Achievements */}
         {newAchievements.length > 0 && (
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {newAchievements.map((ach, i) => (
               <motion.div key={ach.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 + i * 0.2 }}>
                 <AchievementToast achievement={ach} />
@@ -176,26 +177,25 @@ export default function Results() {
 
         {/* Actions */}
         <motion.div
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-2 md:flex-row md:justify-center"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
           {result.questionData?.length > 0 && (
-            <Button variant="primary" size="lg" className="w-full"
+            <Button variant="primary" size="lg" className="md:min-w-48"
               onClick={() => navigate('/quiz/review', { state: { result } })}>
               📋 Review Answers
             </Button>
           )}
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" size="md" onClick={() => navigate('/categories')}>
-              Try Another
-            </Button>
-            <Button variant="ghost" size="md" onClick={() => navigate('/dashboard')}>
-              Dashboard
-            </Button>
-          </div>
+          <Button variant="secondary" size="lg" className="md:min-w-48" onClick={() => navigate('/categories')}>
+            Try Another
+          </Button>
+          <Button variant="ghost" size="lg" className="md:min-w-48" onClick={() => navigate('/dashboard')}>
+            Dashboard
+          </Button>
         </motion.div>
+
       </div>
     </PageWrapper>
   )
