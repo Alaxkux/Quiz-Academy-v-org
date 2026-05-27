@@ -88,12 +88,13 @@ export default function AppShell() {
         {/* Scrollable page area — full height minus topbar */}
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6"
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-24 md:p-6 md:pb-6"
           style={{
             WebkitOverflowScrolling: 'touch',
             scrollBehavior: 'auto',
             overscrollBehavior: 'none',
             minHeight: 0,
+            paddingBottom: 'max(5.5rem, calc(57px + env(safe-area-inset-bottom) + 1rem))',
           }}
         >
           <Outlet />
