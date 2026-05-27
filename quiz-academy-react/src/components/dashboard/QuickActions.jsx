@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { isDailyChallengeCompleted, getTodayProgress } from '../../utils/gamification'
 
-function ActionTile({ emoji, label, sub, onClick, accent, badge, progress, delay = 0 }) {
+function ActionTile({ emoji, label, sub, onClick, accent, badge, delay = 0 }) {
   return (
     <motion.button
       onClick={onClick}
@@ -28,29 +28,7 @@ function ActionTile({ emoji, label, sub, onClick, accent, badge, progress, delay
         </span>
       )}
 
-      {/* Emoji + optional inline ring side-by-side */}
-      <div className="flex items-center justify-center gap-1.5">
-        <span className="text-2xl leading-none">{emoji}</span>
-        {progress !== undefined && (
-          <div className="relative flex-shrink-0" style={{ width: 28, height: 28 }}>
-            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-              <circle cx="18" cy="18" r="14" fill="none" stroke="var(--border)" strokeWidth="4" />
-              <circle
-                cx="18" cy="18" r="14" fill="none"
-                stroke="var(--accent)" strokeWidth="4"
-                strokeDasharray={`${progress * 0.88} 88`}
-                strokeLinecap="round"
-              />
-            </svg>
-            <span
-              className="absolute inset-0 flex items-center justify-center font-display font-bold"
-              style={{ fontSize: 8, color: 'var(--accent)' }}
-            >
-              {Math.round(progress)}%
-            </span>
-          </div>
-        )}
-      </div>
+      <span className="text-2xl leading-none">{emoji}</span>
 
       <div className="font-display font-semibold text-xs text-primary leading-tight">{label}</div>
       {sub && (
@@ -95,7 +73,6 @@ export default function QuickActions({ user, hasInProgress = false }) {
       sub:   `${todayProg.done}/${todayProg.goal} today`,
       onClick: () => navigate('/planner'),
       delay:  0.25,
-      progress: todayProg.pct,
     },
     {
       emoji: '🔍', label: 'Review Mistakes', sub: 'Choose a course to review',
