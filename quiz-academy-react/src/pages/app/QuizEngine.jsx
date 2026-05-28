@@ -227,6 +227,8 @@ export default function QuizEngine() {
 
       // Fire notifications
       addNotification(`🎯 Quiz complete! You scored ${result.percentage}% on ${result.category}`, result.percentage >= 80 ? 'success' : 'info')
+      if (result.xpEarned > 0) addNotification(`⭐ +${result.xpEarned} XP earned`, 'xp')
+      if (result.points  > 0) addNotification(`💎 +${result.points} points added to your total`, 'info')
       newAchievements.forEach(ach => {
         addNotification(`🏆 Achievement unlocked: ${ach.name}`, 'success')
       })

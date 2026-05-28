@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { applyTheme, getStoredTheme } from './data/themes'
 import AppShell from './components/layout/AppShell'
+import ScrollToTop from './components/layout/ScrollToTop'
 import Spinner from './components/ui/Spinner'
 
 // ── Auth pages (small — load immediately) ──
@@ -105,6 +106,8 @@ export default function App() {
   }
 
   return (
+    <>
+    <ScrollToTop />
     <Routes>
       {/* ── Public / Auth routes ── */}
       <Route path="/" element={<GuestOnly><LandingPage /></GuestOnly>} />
@@ -139,5 +142,6 @@ export default function App() {
       {/* ── Catch-all ── */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </>
   )
 }

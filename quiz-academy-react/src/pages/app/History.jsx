@@ -56,7 +56,7 @@ function HistoryItem({ entry, onClick }) {
 
 export default function History() {
   const navigate   = useNavigate()
-  const { user }   = useAuth()
+  const { user, addNotification } = useAuth()
   const [items,    setItems]    = useState([])
   const [page,     setPage]     = useState(1)
   const [hasMore,  setHasMore]  = useState(false)
@@ -91,6 +91,7 @@ export default function History() {
     setRefreshing(true)
     await loadPage(1, true)
     setRefreshing(false)
+    addNotification('🔄 History refreshed', 'info')
   }
 
   async function handleClick(entry) {

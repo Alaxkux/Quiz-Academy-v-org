@@ -12,7 +12,7 @@ import ProgressBar from '../../components/ui/ProgressBar'
 import { ConfirmModal } from '../../components/ui/Modal'
 
 export default function Profile() {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, addNotification } = useAuth()
   const fileRef = useRef(null)
 
   const [name,    setName]    = useState(user?.name || '')
@@ -47,6 +47,7 @@ export default function Profile() {
     setPendingAvatar(null)
     setShowAvatarConfirm(false)
     toast.success('Profile picture updated ✓')
+    addNotification('🖼️ Profile picture updated', 'success')
   }
 
   function handleSaveProfile() {
@@ -56,6 +57,7 @@ export default function Profile() {
     setTimeout(() => {
       setSaving(false)
       toast.success('Profile saved ✓')
+      addNotification('👤 Profile saved successfully', 'success')
     }, 600)
   }
 

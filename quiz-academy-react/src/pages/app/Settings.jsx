@@ -141,7 +141,7 @@ function ThemePicker() {
 }
 
 function NotificationsTab() {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, addNotification } = useAuth()
   const pushStatus = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
 
   return (

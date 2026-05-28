@@ -25,18 +25,19 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
               <button onClick={onClearAll} className="text-xs text-muted hover:text-red transition-colors">Clear all</button>
             )}
           </div>
-          <div className="overflow-y-auto" style={{ maxHeight: `${3 * 60}px` }}>
+          <div className="overflow-y-auto" style={{ maxHeight: '360px' }}>
             {notifications.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted">No notifications yet</div>
             ) : (
               notifications.map(n => (
                 <div key={n.id} className="flex items-start gap-2.5 px-4 py-3 border-b hover:opacity-80 transition-opacity"
                   style={{ borderColor: 'var(--border)' }}>
-                  <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                    style={{ background: n.type === 'success' ? 'var(--green)' : n.type === 'warning' ? 'var(--gold)' : n.type === 'error' ? 'var(--red)' : 'var(--accent)' }}
-                  />
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 text-xs"
+                    style={{ background: n.type === 'success' ? 'var(--green-dim)' : n.type === 'warning' ? 'var(--gold-dim)' : n.type === 'error' ? 'var(--red-dim)' : 'var(--accent-dim)' }}>
+                    {n.type === 'success' ? '✓' : n.type === 'warning' ? '⚠' : n.type === 'error' ? '✗' : n.type === 'login' ? '👋' : n.type === 'xp' ? '⭐' : n.type === 'level' ? '🏆' : n.type === 'streak' ? '🔥' : n.type === 'achievement' ? '🎖️' : '🔔'}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-primary leading-snug truncate">{n.message}</p>
+                    <p className="text-xs text-primary leading-snug">{n.message}</p>
                     <p className="text-xs text-muted mt-0.5">{n.timestamp}</p>
                   </div>
                   <button onClick={() => onDismiss(n.id)} className="text-muted hover:text-red transition-colors flex-shrink-0 mt-0.5">
@@ -46,11 +47,7 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
               ))
             )}
           </div>
-          {notifications.length > 3 && (
-            <div className="py-1.5 text-center text-xs text-muted" style={{ background: 'var(--bg2)' }}>
-              {notifications.length - 3} more — scroll to see
-            </div>
-          )}
+
         </motion.div>
       )}
     </AnimatePresence>
@@ -200,8 +197,10 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
           >
             <Bell size={14} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
-                style={{ background: 'var(--red)', border: '2px solid var(--bg1)' }} />
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center font-bold"
+                style={{ background: 'var(--red)', color: '#fff', fontSize: 9, border: '2px solid var(--bg1)' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
           <NotifDropdown
