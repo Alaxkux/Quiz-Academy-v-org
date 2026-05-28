@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shuffle, Dumbbell, Search, Star, ChevronRight, X } from 'lucide-react'
@@ -15,6 +15,24 @@ import useQuizStore from '../../store/quizStore'
 
 // ── Review Mistakes Course Picker modal ──
 function ReviewPicker({ open, onClose, history, allCourses }) {
+  // Scroll lock for iOS
+  useEffect(() => {
+    if (!open) return
+    const scrollY = window.scrollY
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [open])
   const navigate = useNavigate()
   const { setPendingConfig } = useQuizStore()
 
@@ -55,7 +73,7 @@ function ReviewPicker({ open, onClose, history, allCourses }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={e => { if (e.target === e.currentTarget) onClose() }}

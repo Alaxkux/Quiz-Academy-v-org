@@ -101,35 +101,18 @@ export default function QuizEngine() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [])
 
- // visibilitychange — tab switch: show warning AND blur the page to pull focus back
-useEffect(() => {
-  const handler = () => {
-    if (document.hidden && isActive) {
-      const count = tabLeft()
-      setTabCount(count)
-      setTimeout(() => {
-        setTabOpen(true)
-        // Force focus back to this window when user returns
-        window.focus()
-      }, 200)
+  // visibilitychange — tab switch
+  useEffect(() => {
+    const handler = () => {
+      if (document.hidden && isActive) {
+        const count = tabLeft()
+        setTabCount(count)
+        setTimeout(() => setTabOpen(true), 200)
+      }
     }
-  }
-  document.addEventListener('visibilitychange', handler)
-  return () => document.removeEventListener('visibilitychange', handler)
-}, [isActive])
-
-// focusout guard — prevent keyboard/click focus leaving the quiz area
-useEffect(() => {
-  if (!isActive) return
-  const handler = (e) => {
-    // If focus tries to leave the document (e.g. address bar, another tab via keyboard)
-    if (!document.hasFocus()) {
-      window.focus()
-    }
-  }
-  window.addEventListener('blur', handler)
-  return () => window.removeEventListener('blur', handler)
-}, [isActive])
+    document.addEventListener('visibilitychange', handler)
+    return () => document.removeEventListener('visibilitychange', handler)
+  }, [isActive])
 
   // popstate — back button
   useEffect(() => {
