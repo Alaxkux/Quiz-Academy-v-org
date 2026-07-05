@@ -1,148 +1,311 @@
 /* ================================================================
-   QUIZ ACADEMY — AI ROUTES v4
-   POST /api/ai/generate  — generate quiz questions via Google Gemini
-   The Gemini API key lives in .env — never exposed to the browser.
-   Free tier: 15 req/min, 1500 req/day — no billing needed.
+   QUIZ ACADEMY — AI ROUTES v5
+   All Gemini calls are server-side ONLY. Key never touches browser.
+   Model: gemini-3.5-flash (Gemini 3.5 Flash)
+
+   POST /api/ai/generate     — generate quiz questions
+   POST /api/ai/from-pdf     — generate from uploaded PDF
+   POST /api/ai/explain      — explain why answer is right/wrong
+   POST /api/ai/hint         — give a hint for a question
+   POST /api/ai/study-plan   — generate a study plan
+   POST /api/ai/practice     — generate targeted practice questions
    ================================================================ */
 
-const express   = require('express');
-const rateLimit = require('express-rate-limit');
-const { requireAuth } = require('../middleware/auth');
+const express   = require('express')
+const rateLimit = require('express-rate-limit')
+const { requireAuth } = require('../middleware/auth')
+const User = require('../models/User')
 
-// ── Eagerly loaded so errors surface at startup, not at request time ──
-const multer   = require('multer');
-const pdfParse = require('pdf-parse');
-const pdfUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const multer   = require('multer')
+const pdfParse = require('pdf-parse')
+const pdfUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-const router = express.Router();
+const router = express.Router()
 
-// ── Rate limit: 10 AI requests per user per minute ──
+// ── Model ──
+const GEMINI_MODEL = 'gemini-3.5-flash'
+const GEMINI_BASE  = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+
+// ── Rate limit: 5 requests/minute per user ──
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: 5,
   message: { error: 'Too many AI requests — please wait a minute and try again' },
-  keyGenerator: (req) => req.user?._id?.toString() || req.ip
-});
+  keyGenerator: req => req.user?._id?.toString() || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+})
 
-// ── GENERATE QUESTIONS via Gemini ──
-router.post('/generate', requireAuth, aiLimiter, async (req, res) => {
+// ── Daily limit middleware: 10 AI requests per user per day ──
+async function dailyLimitCheck(req, res, next) {
   try {
-    const { topic, difficulty = 'medium', count = 10 } = req.body;
+    const user = await User.findById(req.user._id).select('aiUsage')
+    const today = new Date().toDateString()
+    const usage = user.aiUsage || {}
+
+    if (usage.date !== today) {
+      // Reset for new day
+      await User.findByIdAndUpdate(req.user._id, {
+        'aiUsage.date':  today,
+        'aiUsage.count': 0,
+      })
+      req.aiUsageCount = 0
+      return next()
+    }
+
+    if ((usage.count || 0) >= 10) {
+      return res.status(429).json({
+        error: 'Daily AI limit reached (10 requests/day). Resets at midnight.',
+        limitReached: true,
+      })
+    }
+
+    req.aiUsageCount = usage.count || 0
+    next()
+  } catch (err) {
+    next() // Don't block if tracking fails
+  }
+}
+
+// ── Increment usage after successful AI call ──
+async function incrementUsage(userId) {
+  const today = new Date().toDateString()
+  await User.findByIdAndUpdate(userId, {
+    $inc: { 'aiUsage.count': 1 },
+    'aiUsage.date': today,
+  }).catch(() => {})
+}
+
+// ── Core Gemini caller — lean, focused prompts ──
+async function callGemini(prompt, temperature = 0.7, maxTokens = 4096) {
+  if (!process.env.GEMINI_API_KEY)
+    throw new Error('AI service not configured. Add GEMINI_API_KEY to .env')
+
+  // Cap prompt length at ~2000 chars
+  const safePrompt = prompt.slice(0, 2000)
+
+  const res = await fetch(`${GEMINI_BASE}?key=${process.env.GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: safePrompt }] }],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens,
+        // Disable unnecessary features
+        candidateCount: 1,
+      },
+      // No tools — no grounding, no code execution, no function calling
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    if (res.status === 429) throw new Error('AI rate limit reached — try again shortly')
+    if (res.status === 400) throw new Error('Invalid request to AI service')
+    throw new Error(`AI service error: ${res.status}`)
+  }
+
+  const data = await res.json()
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+}
+
+// ── Parse JSON safely from Gemini text ──
+function parseJSON(text) {
+  if (!text) throw new Error('AI returned empty response')
+
+  // Step 1: strip markdown fences
+  let clean = text
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .trim()
+
+  // Step 2: direct parse
+  try { return JSON.parse(clean) } catch (_) {}
+
+  // Step 3: extract first JSON array [...]
+  const arrMatch = clean.match(/\[[\s\S]*\]/)
+  if (arrMatch) {
+    try { return JSON.parse(arrMatch[0]) } catch (_) {}
+  }
+
+  // Step 4: extract first JSON object {...}
+  const objMatch = clean.match(/\{[\s\S]*\}/)
+  if (objMatch) {
+    try { return JSON.parse(objMatch[0]) } catch (_) {}
+  }
+
+  // Step 5: fix trailing commas then retry
+  try {
+    const fixed = clean.replace(/,(\s*[}\]])/g, '$1')
+    return JSON.parse(fixed)
+  } catch (_) {}
+
+  // Step 6: log for debugging
+  console.error('parseJSON failed. Raw snippet:', text.slice(0, 400))
+  throw new Error('Could not parse AI response — try again')
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// POST /api/ai/generate — generate quiz questions from a topic
+// ─────────────────────────────────────────────────────────────────
+router.post('/generate', requireAuth, aiLimiter, dailyLimitCheck, async (req, res) => {
+  try {
+    const { topic, difficulty = 'medium', count = 10 } = req.body
 
     if (!topic || typeof topic !== 'string' || topic.trim().length < 2)
-      return res.status(400).json({ error: 'Please provide a topic (at least 2 characters)' });
+      return res.status(400).json({ error: 'Please provide a topic (at least 2 characters)' })
     if (!['easy','medium','hard','mixed'].includes(difficulty))
-      return res.status(400).json({ error: 'Difficulty must be easy, medium, hard, or mixed' });
+      return res.status(400).json({ error: 'Difficulty must be easy, medium, hard, or mixed' })
 
-    const safeCount = Math.min(Math.max(parseInt(count) || 10, 1), 20);
+    const safeCount = Math.min(Math.max(parseInt(count) || 10, 1), 10)
+    const diffNote  = difficulty === 'mixed' ? 'Mix easy, medium, and hard.' : `All ${difficulty} difficulty.`
 
-    if (!process.env.GEMINI_API_KEY)
-      return res.status(503).json({ error: 'AI service not configured. Add GEMINI_API_KEY to .env' });
+    const prompt = `Generate exactly ${safeCount} multiple-choice questions about: "${topic.trim()}". ${diffNote}
 
-    const diffInstruction = difficulty === 'mixed'
-      ? 'Mix easy, medium, and hard questions evenly.'
-      : `All questions must be ${difficulty} difficulty.`;
+IMPORTANT: Return ONLY a raw JSON array. No markdown. No explanation outside the JSON.
+Keep each option under 15 words. Keep explanations under 20 words.
 
-    const prompt = `Generate exactly ${safeCount} multiple-choice quiz questions about: "${topic.trim()}".
-${diffInstruction}
+Format:
+[{"q":"Question?","opts":["A","B","C","D"],"a":0,"explanation":"Short reason.","difficulty":"medium"}]
 
-Return ONLY a valid JSON array with no markdown, no code blocks, no extra text:
-[
-  {
-    "q": "Question text here?",
-    "opts": ["Option A", "Option B", "Option C", "Option D"],
-    "a": 0,
-    "explanation": "Clear explanation of why the correct answer is right (1-2 sentences).",
-    "difficulty": "medium"
-  }
-]
+Rules: "a" = zero-based correct index. Exactly 4 opts. difficulty = easy/medium/hard.`
 
-Rules:
-- "a" is the zero-based index of the correct answer (0-3)
-- Exactly 4 options per question
-- Explanations must be educational and accurate
-- Questions must be clear and unambiguous
-- difficulty must be exactly "easy", "medium", or "hard"`;
+    const text = await callGemini(prompt, 0.7, 4096)
+    const parsed = parseJSON(text)
+    const questions = Array.isArray(parsed) ? parsed : (parsed.questions || [])
 
-    // ── Call Gemini API ──
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
-
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature:     0.7,
-          maxOutputTokens: 4096
-        }
-      })
-    });
-
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.json().catch(() => ({}));
-      console.error('Gemini API error:', geminiRes.status, errBody);
-      if (geminiRes.status === 429)
-        return res.status(429).json({ error: 'AI rate limit reached — try again in a moment' });
-      if (geminiRes.status === 400)
-        return res.status(400).json({ error: 'Invalid request to AI service' });
-      return res.status(503).json({ error: 'AI service temporarily unavailable' });
-    }
-
-    const geminiData = await geminiRes.json();
-    let text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    // Parse response
-    let questions;
-    try {
-      // Strip any accidental markdown fences
-      text = text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(text);
-      questions = Array.isArray(parsed)
-        ? parsed
-        : (parsed.questions || parsed.quiz || Object.values(parsed)[0]);
-    } catch {
-      const match = text.match(/\[[\s\S]*\]/);
-      if (!match) return res.status(500).json({ error: 'AI returned unparseable response — try again' });
-      questions = JSON.parse(match[0]);
-    }
-
-    if (!Array.isArray(questions) || questions.length === 0)
-      return res.status(500).json({ error: 'AI returned no questions — try a different topic' });
-
-    // Validate + sanitize
     const valid = questions.filter(q =>
-      q.q && typeof q.q === 'string' &&
-      Array.isArray(q.opts) && q.opts.length >= 2 &&
-      typeof q.a === 'number' && q.a >= 0 && q.a < q.opts.length
+      q.q && Array.isArray(q.opts) && q.opts.length >= 2 && typeof q.a === 'number'
     ).map(q => ({
       q:           q.q.trim(),
       opts:        q.opts.map(o => String(o).trim()),
       a:           q.a,
-      explanation: q.explanation?.trim() || 'See your course materials for more information.',
-      difficulty:  ['easy','medium','hard'].includes(q.difficulty) ? q.difficulty : difficulty === 'mixed' ? 'medium' : difficulty
-    }));
+      explanation: q.explanation?.trim() || '',
+      difficulty:  ['easy','medium','hard'].includes(q.difficulty) ? q.difficulty : 'medium',
+    }))
 
-    if (valid.length === 0)
-      return res.status(500).json({ error: 'AI questions failed validation — please try again' });
+    if (!valid.length) return res.status(500).json({ error: 'AI returned no valid questions — try again' })
 
-    res.json({ questions: valid, count: valid.length, topic: topic.trim() })
+    await incrementUsage(req.user._id)
+    res.json({ questions: valid, count: valid.length, topic: topic.trim(),
+      remaining: 10 - (req.aiUsageCount + 1) })
 
   } catch (err) {
-    console.error('AI generate error:', err)
-    res.status(500).json({ error: 'Failed to generate questions — please try again' })
+    console.error('AI generate error:', err.message)
+    res.status(500).json({ error: err.message || 'Failed to generate questions' })
   }
 })
 
-// ── GENERATE FROM PDF ──
-router.post('/from-pdf', requireAuth, aiLimiter, async (req, res) => {
+// ─────────────────────────────────────────────────────────────────
+// POST /api/ai/explain — explain why an answer is right or wrong
+// Lean prompt: only question + answers needed
+// ─────────────────────────────────────────────────────────────────
+router.post('/explain', requireAuth, aiLimiter, dailyLimitCheck, async (req, res) => {
   try {
-    if (!process.env.GEMINI_API_KEY)
-      return res.status(503).json({ error: 'AI service not configured' })
+    const { question, selectedAnswer, correctAnswer, topic } = req.body
+    if (!question || selectedAnswer === undefined || correctAnswer === undefined)
+      return res.status(400).json({ error: 'question, selectedAnswer and correctAnswer are required' })
 
-    // Handle multipart form — use multer in memory
+    const isCorrect = selectedAnswer === correctAnswer
+    const prompt = `Quiz question: "${String(question).slice(0, 300)}"
+Selected answer: "${String(selectedAnswer).slice(0, 100)}"
+Correct answer: "${String(correctAnswer).slice(0, 100)}"
+${topic ? `Topic: ${topic}` : ''}
+
+${isCorrect ? 'The user got it right. Briefly explain why this answer is correct (2-3 sentences).' : 'The user got it wrong. Explain clearly why the correct answer is right and the selected answer is wrong (2-3 sentences).'}
+Be educational and concise.`
+
+    const explanation = await callGemini(prompt, 0.5, 300)
+    await incrementUsage(req.user._id)
+    res.json({ explanation: explanation.trim(), remaining: 10 - (req.aiUsageCount + 1) })
+
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to generate explanation' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
+// POST /api/ai/hint — give a hint for a question mid-quiz
+// ─────────────────────────────────────────────────────────────────
+router.post('/hint', requireAuth, aiLimiter, dailyLimitCheck, async (req, res) => {
+  try {
+    const { question, options } = req.body
+    if (!question) return res.status(400).json({ error: 'question is required' })
+
+    const prompt = `Quiz question: "${String(question).slice(0, 300)}"
+Options: ${(options || []).map((o,i) => `${String.fromCharCode(65+i)}. ${o}`).join(', ')}
+
+Give ONE short hint (1-2 sentences) that helps the user think toward the correct answer WITHOUT revealing it directly. Be subtle.`
+
+    const hint = await callGemini(prompt, 0.6, 150)
+    await incrementUsage(req.user._id)
+    res.json({ hint: hint.trim(), remaining: 10 - (req.aiUsageCount + 1) })
+
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to generate hint' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
+// POST /api/ai/study-plan — generate a personalized study plan
+// ─────────────────────────────────────────────────────────────────
+router.post('/study-plan', requireAuth, aiLimiter, dailyLimitCheck, async (req, res) => {
+  try {
+    const { weakTopics = [], goal = 'improve', daysAvailable = 7 } = req.body
+
+    const prompt = `Create a ${daysAvailable}-day study plan for a student who wants to ${goal}.
+Weak areas: ${weakTopics.slice(0, 5).join(', ') || 'general improvement'}.
+
+Return ONLY valid JSON:
+{"plan":[{"day":1,"focus":"Topic","tasks":["Task 1","Task 2"],"duration":"30 mins"}],"tips":["Tip 1","Tip 2"]}`
+
+    const text = await callGemini(prompt, 0.6, 800)
+    const plan  = parseJSON(text)
+    await incrementUsage(req.user._id)
+    res.json({ ...plan, remaining: 10 - (req.aiUsageCount + 1) })
+
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to generate study plan' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
+// POST /api/ai/practice — generate targeted practice questions
+// ─────────────────────────────────────────────────────────────────
+router.post('/practice', requireAuth, aiLimiter, dailyLimitCheck, async (req, res) => {
+  try {
+    const { topic, weakAreas = [], count = 5 } = req.body
+    if (!topic) return res.status(400).json({ error: 'topic is required' })
+
+    const safeCount = Math.min(parseInt(count) || 5, 10)
+    const focus = weakAreas.length ? `Focus specifically on: ${weakAreas.slice(0,3).join(', ')}.` : ''
+
+    const prompt = `Generate ${safeCount} targeted practice questions about "${topic.slice(0,100)}". ${focus}
+Make questions that test understanding, not memorisation.
+Return ONLY valid JSON array:
+[{"q":"Question?","opts":["A","B","C","D"],"a":0,"explanation":"Why correct.","difficulty":"medium"}]`
+
+    const text = await callGemini(prompt, 0.7, 1024)
+    const parsed = parseJSON(text)
+    const questions = (Array.isArray(parsed) ? parsed : []).filter(q =>
+      q.q && Array.isArray(q.opts) && typeof q.a === 'number'
+    )
+
+    await incrementUsage(req.user._id)
+    res.json({ questions, count: questions.length, remaining: 10 - (req.aiUsageCount + 1) })
+
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to generate practice questions' })
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
+// POST /api/ai/from-pdf — generate questions from uploaded PDF
+// ─────────────────────────────────────────────────────────────────
+router.post('/from-pdf', requireAuth, aiLimiter, dailyLimitCheck, async (req, res) => {
+  try {
     pdfUpload.single('pdf')(req, res, async (err) => {
       if (err) return res.status(400).json({ error: 'Upload failed: ' + err.message })
       if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' })
@@ -151,65 +314,51 @@ router.post('/from-pdf', requireAuth, aiLimiter, async (req, res) => {
       try {
         const data = await pdfParse(req.file.buffer)
         text = data.text?.trim() || ''
-      } catch (e) {
-        return res.status(400).json({ error: 'Could not extract text from PDF. Ensure it is a text-based PDF, not a scanned image.' })
+      } catch {
+        return res.status(400).json({ error: 'Could not extract text from PDF. Use a text-based PDF, not a scanned image.' })
       }
 
       if (!text || text.length < 100)
         return res.status(400).json({ error: 'PDF has too little text to generate questions from' })
 
-      // Truncate to ~8000 words to fit Gemini token limit
-      const words    = text.split(/\s+/)
-      const truncated = words.slice(0, 8000).join(' ')
-
+      // Truncate to fit within 2000 char prompt budget
+      const truncated = text.split(/\s+/).slice(0, 500).join(' ')
       const difficulty = req.body.difficulty || 'medium'
-      const count      = Math.min(20, parseInt(req.body.count) || 10)
+      const count      = Math.min(10, parseInt(req.body.count) || 5)
 
-      const prompt = `Based ONLY on the following study material, generate exactly ${count} multiple-choice questions.
-Difficulty: ${difficulty}. 
+      const prompt = `Based ONLY on this study material, generate ${count} multiple-choice questions. Difficulty: ${difficulty}.
 
-STUDY MATERIAL:
-${truncated}
+MATERIAL: ${truncated}
 
-Return ONLY a valid JSON array with no markdown, no code blocks:
-[{"q":"...","opts":["A","B","C","D"],"a":0,"explanation":"...","difficulty":"${difficulty}"}]
+Return ONLY valid JSON array:
+[{"q":"?","opts":["A","B","C","D"],"a":0,"explanation":"Why.","difficulty":"${difficulty}"}]`
 
-Rules: "a" is the zero-based index of the correct answer. Exactly 4 options per question. Only use information from the material provided.`
-
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
-      const geminiRes = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 4096, responseMimeType: 'application/json' }
-        })
-      })
-
-      if (!geminiRes.ok) return res.status(503).json({ error: 'AI service unavailable — try again' })
-
-      const geminiData = await geminiRes.json()
-      let raw = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
-      raw = raw.replace(/```json|```/g, '').trim()
-
-      let questions
-      try { questions = JSON.parse(raw) } catch {
-        const m = raw.match(/\[[\s\S]*\]/)
-        if (!m) return res.status(500).json({ error: 'AI returned unparseable response' })
-        questions = JSON.parse(m[0])
-      }
-
-      const valid = (Array.isArray(questions) ? questions : []).filter(q =>
+      const raw = await callGemini(prompt, 0.5, 1500)
+      const parsed = parseJSON(raw)
+      const questions = (Array.isArray(parsed) ? parsed : []).filter(q =>
         q.q && Array.isArray(q.opts) && q.opts.length >= 2 && typeof q.a === 'number'
       )
 
-      if (!valid.length) return res.status(500).json({ error: 'No valid questions generated — try a different PDF' })
+      if (!questions.length) return res.status(500).json({ error: 'No valid questions generated — try a different PDF' })
 
-      res.json({ questions: valid, count: valid.length })
+      await incrementUsage(req.user._id)
+      res.json({ questions, count: questions.length, remaining: 10 - (req.aiUsageCount + 1) })
     })
   } catch (err) {
-    console.error('PDF generate error:', err)
-    res.status(500).json({ error: 'Failed to process PDF' })
+    res.status(500).json({ error: err.message || 'Failed to process PDF' })
+  }
+})
+
+// ── GET usage — how many requests left today ──
+router.get('/usage', requireAuth, async (req, res) => {
+  try {
+    const user  = await User.findById(req.user._id).select('aiUsage')
+    const today = new Date().toDateString()
+    const usage = user.aiUsage || {}
+    const count = usage.date === today ? (usage.count || 0) : 0
+    res.json({ used: count, limit: 10, remaining: 10 - count })
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch usage' })
   }
 })
 

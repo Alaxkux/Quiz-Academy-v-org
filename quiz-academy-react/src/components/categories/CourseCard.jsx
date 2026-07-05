@@ -51,7 +51,7 @@ export default function CourseCard({ id, data, history = [], index = 0 }) {
       {/* Course name + description */}
       <div className="flex-1">
         <h3 className="font-display font-semibold text-sm text-primary leading-tight mb-1">
-          {data.name || id}
+          {data.name || data.title || (id.startsWith('custom_') ? 'Custom Course' : id)}
         </h3>
         <p className="text-xs text-secondary leading-snug line-clamp-2">
           {data.description}

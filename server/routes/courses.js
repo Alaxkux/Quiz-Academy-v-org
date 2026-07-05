@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
       .sort({ code: 1 })
     res.json({ courses: courses.map(c => ({
       code: c.code,
+      name: c.name || c.code,
       icon: c.icon,
       color: c.color,
       description: c.description,
@@ -48,7 +49,7 @@ router.get('/:code', async (req, res) => {
 // ── POST create course (authenticated) ──
 router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { code, icon, color, description, questions } = req.body
+    const { code, name, icon, color, description, questions } = req.body
 
     if (!code || !code.trim())       return res.status(400).json({ error: 'Course code is required' })
     if (!questions || questions.length < 1) return res.status(400).json({ error: 'At least 1 question required' })
@@ -58,6 +59,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
 
     const course = await Course.create({
       code:        code.trim(),
+      name:        name?.trim() || code.trim(),
       icon:        icon        || '📚',
       color:       color       || 'rgba(108,142,255,.12)',
       description: description || '',
@@ -76,7 +78,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
 // ── PUT update course (authenticated + must be creator or built-in admin) ──
 router.put('/:code', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { icon, color, description, questions, isActive } = req.body
+    const { name, icon, color, description, questions, isActive } = req.body
 
     const course = await Course.findOne({ code: req.params.code })
     if (!course) return res.status(404).json({ error: 'Course not found' })
@@ -86,6 +88,7 @@ router.put('/:code', requireAuth, requireAdmin, async (req, res) => {
       return res.status(403).json({ error: 'You can only edit your own courses' })
     }
 
+    if (name        !== undefined) course.name        = name
     if (icon        !== undefined) course.icon        = icon
     if (color       !== undefined) course.color       = color
     if (description !== undefined) course.description = description
@@ -119,7 +122,6 @@ router.delete('/:code', requireAuth, requireAdmin, async (req, res) => {
   }
 })
 
-module.exports = router
 // ── POST bulk upload questions to existing course ──
 router.post('/:code/questions', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -165,3 +167,5 @@ router.post('/:code/questions', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to upload questions' })
   }
 })
+
+module.exports = router

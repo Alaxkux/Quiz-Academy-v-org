@@ -4,6 +4,50 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* ── Modern Typography Scale ── */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-size: 0.9375rem; /* 15px base */
+  line-height: 1.6;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Bigger, sharper headings */
+h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem);    font-weight: 700; letter-spacing: -0.02em; }
+h3 { font-size: clamp(1.1rem, 2vw, 1.35rem); font-weight: 600; letter-spacing: -0.01em; }
+
+/* Stat numbers — punchy */
+.font-black {
+  font-weight: 900 !important;
+  letter-spacing: -0.04em;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+}
+
+/* Labels and captions — slightly bigger */
+.text-xs  { font-size: 0.8125rem; }  /* 13px not 12px */
+.text-sm  { font-size: 0.9375rem; }  /* 15px not 14px */
+.text-base{ font-size: 1rem; }
+.text-lg  { font-size: 1.125rem; }
+.text-xl  { font-size: 1.25rem; }
+
+/* Sidebar nav items */
+.nav-label { font-size: 0.9375rem; font-weight: 500; }
+
 /* ── iOS Safari scroll fix ── */
 #main-scroll-area {
   /* iOS Safari needs explicit height + overflow on the element itself */

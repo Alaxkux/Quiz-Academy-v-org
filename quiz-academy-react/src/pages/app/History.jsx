@@ -25,7 +25,7 @@ function HistoryItem({ entry, onClick }) {
       <span className="text-xl flex-shrink-0">{emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-primary truncate">
-          {entry.category}
+          {entry.categoryName || (entry.category?.startsWith('custom_') ? 'Custom Course' : entry.category)}
           {entry.isDailyChallenge && (
             <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded-full"
               style={{ background: 'var(--gold-dim)', color: 'var(--gold)', border: '1px solid rgba(245,200,66,.2)' }}>

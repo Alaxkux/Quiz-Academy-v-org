@@ -87,7 +87,10 @@ export default function AppShell() {
 
         {/* Scrollable page area — full height minus topbar */}
         <main
-          ref={mainRef}
+          ref={el => {
+            mainRef.current = el
+            if (el) el.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important')
+          }}
           className="flex-1 overflow-y-auto overflow-x-hidden"
           style={{
             WebkitOverflowScrolling: 'touch',
@@ -96,9 +99,7 @@ export default function AppShell() {
             padding: '1rem',
             paddingBottom: 'max(6rem, calc(57px + env(safe-area-inset-bottom) + 1.5rem))',
           }}
-          id="main-scroll-area" data-scroll-container="true"
-          // iOS Safari: must be on a specific scrollable child, not body
-          ref={el => { if (el) el.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important') }}
+          id="main-scroll-area"
         >
           <Outlet />
         </main>

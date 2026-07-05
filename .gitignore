@@ -1,25 +1,28 @@
-# ── Environment variables (NEVER commit these) ──
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Environment — NEVER commit these
 .env
 .env.local
-.env.*.local
+.env.production
+.env.development
 
-# ── Dependencies ──
-node_modules/
-quiz-academy-react/node_modules/
+# Keep the example template
+!.env.example
 
-# ── Build output ──
-dist/
-server/public/assets/
-quiz-academy-react/dist/
-
-# ── Logs ──
+# Logs
 *.log
 npm-debug.log*
 
-# ── OS files ──
+# OS
 .DS_Store
 Thumbs.db
 
-# ── Editor ──
+# Editor
 .vscode/
-.idea/.env
+.idea/
+
+# Built assets
+server/public/assets/

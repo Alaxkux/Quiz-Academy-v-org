@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, Sun, Moon, Maximize2, X, PanelLeft } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Maximize2, X, PanelLeft, Zap, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { getStoredTheme } from '../../data/themes'
+import { getLevelInfo } from '../../data/levels'
 import Avatar from '../ui/Avatar'
 
 function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
@@ -12,7 +13,7 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="absolute right-0 top-full mt-2 w-72 rounded-2xl overflow-hidden z-50"
+          className="absolute right-0 top-full mt-2 w-80 rounded-2xl overflow-hidden z-50"
           style={{ background: 'var(--bg1)', border: '1px solid var(--border)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
           initial={{ opacity: 0, y: -8, scale: 0.96 }}
           animate={{ opacity: 1, y: 0,  scale: 1    }}
@@ -27,7 +28,10 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
           </div>
           <div className="overflow-y-auto" style={{ maxHeight: '360px' }}>
             {notifications.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted">No notifications yet</div>
+              <div className="py-8 text-center">
+                <div className="text-3xl mb-2">🔔</div>
+                <p className="text-sm text-muted">No notifications yet</p>
+              </div>
             ) : (
               notifications.map(n => (
                 <div key={n.id} className="flex items-start gap-2.5 px-4 py-3 border-b hover:opacity-80 transition-opacity"
@@ -47,7 +51,6 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
               ))
             )}
           </div>
-
         </motion.div>
       )}
     </AnimatePresence>
@@ -59,16 +62,22 @@ function ProfileDropdown({ open, user, onNavigate, onLogout }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="absolute right-0 top-full mt-2 w-44 rounded-2xl overflow-hidden z-50"
+          className="absolute right-0 top-full mt-2 w-48 rounded-2xl overflow-hidden z-50"
           style={{ background: 'var(--bg1)', border: '1px solid var(--border)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
           initial={{ opacity: 0, y: -8, scale: 0.96 }}
           animate={{ opacity: 1, y: 0,  scale: 1    }}
           exit={{   opacity: 0, y: -8, scale: 0.96  }}
           transition={{ duration: 0.15 }}
         >
+          {/* User info header */}
+          <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="font-semibold text-sm text-primary truncate">{user?.name}</div>
+            <div className="text-xs text-muted truncate">{user?.email}</div>
+          </div>
           {[
             { label: '👤 Profile',  action: () => onNavigate('/profile')  },
             { label: '⚙️ Settings', action: () => onNavigate('/settings') },
+            { label: '🏆 Achievements', action: () => onNavigate('/achievements') },
           ].map(item => (
             <button key={item.label} onClick={item.action}
               className="w-full text-left px-4 py-2.5 text-sm text-secondary hover:text-primary hover:bg-bg2 transition-colors">
@@ -79,7 +88,7 @@ function ProfileDropdown({ open, user, onNavigate, onLogout }) {
           <button onClick={onLogout}
             className="w-full text-left px-4 py-2.5 text-sm transition-colors"
             style={{ color: 'var(--red)' }}>
-            🚪 Logout
+            🚪 Sign Out
           </button>
         </motion.div>
       )}
@@ -99,6 +108,9 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
 
   const lightThemes = ['snow', 'paper', 'rose']
   const isLight     = lightThemes.includes(getStoredTheme())
+
+  const levelInfo   = user ? getLevelInfo(user.stats?.totalXP || 0) : null
+  const streak      = user?.stats?.streak || 0
 
   useEffect(() => {
     function handle(e) {
@@ -135,27 +147,20 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
       style={{
         background: 'var(--bg1)',
         borderBottom: '1px solid var(--border)',
+        backdropFilter: 'blur(10px)',
       }}
     >
-      {/* Mobile menu button */}
-      <button
-        onClick={onMenuClick}
-        className="flex md:hidden w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors"
-      >
+      {/* Mobile menu */}
+      <button onClick={onMenuClick}
+        className="flex md:hidden w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors">
         <PanelLeft size={16} />
       </button>
 
-      {/* Desktop sidebar toggle — Claude-style */}
-      <button
-        onClick={onToggleCollapse}
+      {/* Desktop sidebar toggle */}
+      <button onClick={onToggleCollapse}
         className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors"
-        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        <motion.div
-          animate={{ scaleX: sidebarCollapsed ? -1 : 1 }}
-          transition={{ duration: 0.2 }}
-          style={{ originX: 0.5 }}
-        >
+        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+        <motion.div animate={{ scaleX: sidebarCollapsed ? -1 : 1 }} transition={{ duration: 0.2 }} style={{ originX: 0.5 }}>
           <PanelLeft size={16} />
         </motion.div>
       </button>
@@ -164,20 +169,41 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
       <span className="font-display font-semibold text-base text-primary flex-1 truncate md:hidden">{title}</span>
 
       {/* Search — desktop */}
-      <form onSubmit={handleSearch} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl flex-1 max-w-xs transition-colors"
+      <form onSubmit={handleSearch}
+        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl flex-1 max-w-sm transition-all"
         style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
         <Search size={13} style={{ color: 'var(--t3)', flexShrink: 0 }} />
         <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+          value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search courses..."
           className="bg-transparent text-sm outline-none w-full"
           style={{ color: 'var(--t1)' }}
         />
       </form>
 
-      <div className="flex items-center gap-1.5 ml-auto">
-        {/* Fullscreen — desktop only */}
+      {/* ── Right side: filled with useful items ── */}
+      <div className="flex items-center gap-2 ml-auto">
+
+        {/* Streak pill — desktop */}
+        {streak > 0 && (
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
+            style={{ background: 'rgba(255,122,69,0.12)', border: '1px solid rgba(255,122,69,0.25)', color: '#FF7A45' }}>
+            <Flame size={12} />
+            {streak}d
+          </div>
+        )}
+
+        {/* XP / Level pill — desktop */}
+        {levelInfo && (
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
+            style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}>
+            <Zap size={11} />
+            Lv.{levelInfo.level}
+            <span className="text-muted font-normal hidden lg:inline">· {(user?.stats?.totalXP || 0).toLocaleString()} XP</span>
+          </div>
+        )}
+
+        {/* Fullscreen */}
         <button onClick={toggleFullscreen}
           className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors">
           <Maximize2 size={14} />
@@ -193,8 +219,7 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
         <div ref={notifRef} className="relative">
           <button
             onClick={() => { setNotifOpen(v => !v); setProfileOpen(false) }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors relative"
-          >
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-[var(--bg2)] transition-colors relative">
             <Bell size={14} />
             {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center font-bold"
@@ -206,7 +231,7 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
           <NotifDropdown
             open={notifOpen}
             notifications={notifications}
-            onDismiss={id => { dismissNotification(id) }}
+            onDismiss={id => dismissNotification(id)}
             onClearAll={() => { clearNotifications(); setNotifOpen(false) }}
           />
         </div>
@@ -215,9 +240,8 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
         <div ref={profileRef} className="relative">
           <button
             onClick={() => { setProfileOpen(v => !v); setNotifOpen(false) }}
-            className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden transition-opacity hover:opacity-80"
-            style={{ border: '2px solid var(--border)' }}
-          >
+            className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden transition-all hover:ring-2"
+            style={{ border: '2px solid var(--border)', '--tw-ring-color': 'var(--accent)' }}>
             <Avatar src={user?.avatar} name={user?.name || 'User'} size="sm" />
           </button>
           <ProfileDropdown
