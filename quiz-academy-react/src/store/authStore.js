@@ -31,14 +31,14 @@ const useAuthStore = create((set, get) => ({
   async login(email, password, rememberMe) {
     const data = await authApi.login(email, password, rememberMe)
     applyTheme(data.user.settings?.theme || getStoredTheme())
-    set({ user: data.user, notifications: data.user.notifications || [] })
+    set({ user: data.user, notifications: data.user.notifications || [], initialized: true, loading: false })
     return data.user
   },
 
   // ── SIGNUP ──
   async signup(name, email, password) {
     const data = await authApi.signup(name, email, password)
-    set({ user: data.user, notifications: [] })
+    set({ user: data.user, notifications: [], initialized: true, loading: false })
     return data.user
   },
 
@@ -46,13 +46,15 @@ const useAuthStore = create((set, get) => ({
   async googleLogin(credential) {
     const data = await authApi.googleLogin(credential)
     applyTheme(data.user.settings?.theme || getStoredTheme())
-    set({ user: data.user, notifications: data.user.notifications || [] })
+    set({ user: data.user, notifications: data.user.notifications || [], initialized: true, loading: false })
     return data.user
   },
 
   // ── LOGOUT ──
   async logout() {
     await authApi.logout()
+    // Clear session-scoped dismiss flags etc. so they reset fresh next login
+    sessionStorage.removeItem('qa_weakTopicsBannerDismissed')
     set({ user: null, notifications: [] })
   },
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X } from 'lucide-react'
+import { Search, X, UserPlus, UserCheck, Clock } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi } from '../../api/auth'
 import { getLevelInfo, calculateSmartAverage } from '../../data/levels'
@@ -10,8 +11,54 @@ import Avatar from '../../components/ui/Avatar'
 import ProgressBar from '../../components/ui/ProgressBar'
 import { SkeletonPage } from '../../components/ui/Skeleton'
 
+// ── Friend action button — reflects real relationship state ──
+function FriendActionButton({ user, status, onAdd, onAccept, onRemove }) {
+  if (status === 'friends') {
+    return (
+      <button
+        onClick={() => onRemove(user)}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors"
+        style={{ background: 'var(--green-dim)', border: '1px solid rgba(77,255,195,.25)', color: 'var(--green)' }}
+      >
+        <UserCheck size={13} /> Friends
+      </button>
+    )
+  }
+  if (status === 'incoming') {
+    return (
+      <button
+        onClick={() => onAccept(user)}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors"
+        style={{ background: 'var(--accent)', color: '#fff' }}
+      >
+        <UserCheck size={13} /> Accept Request
+      </button>
+    )
+  }
+  if (status === 'pending') {
+    return (
+      <button
+        disabled
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold opacity-70 cursor-default"
+        style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t3)' }}
+      >
+        <Clock size={13} /> Request Sent
+      </button>
+    )
+  }
+  return (
+    <button
+      onClick={() => onAdd(user)}
+      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors"
+      style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}
+    >
+      <UserPlus size={13} /> Add Friend
+    </button>
+  )
+}
+
 // ── User profile popup (public info only) ──
-function UserProfileModal({ user, isMe, onClose }) {
+function UserProfileModal({ user, isMe, status, onClose, onAdd, onAccept, onRemove }) {
   if (!user) return null
   const xpInfo = getLevelInfo(user.stats?.totalXP || 0)
   const avg    = user.history?.length ? calculateSmartAverage(user.history) : 0
@@ -105,6 +152,13 @@ function UserProfileModal({ user, isMe, onClose }) {
             <p className="text-xs text-muted">
               Joined {new Date(user.joinDate || user.createdAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
             </p>
+
+            {/* Friend action */}
+            {!isMe && (
+              <div className="w-full pt-1">
+                <FriendActionButton user={user} status={status} onAdd={onAdd} onAccept={onAccept} onRemove={onRemove} />
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -112,7 +166,7 @@ function UserProfileModal({ user, isMe, onClose }) {
   )
 }
 
-function UserCard({ user, isMe, index, onClick }) {
+function UserCard({ user, isMe, status, index, onClick }) {
   const xpInfo = getLevelInfo(user.stats?.totalXP || 0)
   const avg    = user.history?.length ? calculateSmartAverage(user.history) : 0
 
@@ -139,6 +193,12 @@ function UserCard({ user, isMe, index, onClick }) {
               You
             </span>
           )}
+          {!isMe && status === 'friends' && (
+            <UserCheck size={12} style={{ color: 'var(--green)' }} />
+          )}
+          {!isMe && status === 'incoming' && (
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--red)' }} />
+          )}
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -164,12 +224,63 @@ export default function Users() {
   const [search,   setSearch]     = useState('')
   const [selected, setSelected]   = useState(null)
 
+  // ── Friend relationship state ──
+  const [friendIds, setFriendIds]   = useState(new Set())   // confirmed friends
+  const [incomingIds, setIncomingIds] = useState(new Set()) // sent me a request
+  const [pendingIds, setPendingIds] = useState(new Set())   // I sent them a request (this session)
+  const [requestFrom, setRequestFrom] = useState({})        // userId -> raw request object (for accept)
+
+  function loadFriends() {
+    authApi.getFriends()
+      .then(d => {
+        setFriendIds(new Set((d?.friends || []).map(f => f._id)))
+        const incoming = d?.requests || []
+        setIncomingIds(new Set(incoming.map(r => r.from)))
+        setRequestFrom(Object.fromEntries(incoming.map(r => [r.from, r])))
+      })
+      .catch(() => {})
+  }
+
   useEffect(() => {
     authApi.getLeaderboard()
       .then(data => setUsers(data.users || []))
       .catch(() => setUsers([]))
       .finally(() => setLoading(false))
+    loadFriends()
   }, [])
+
+  function getStatus(u) {
+    if (u.email === me?.email) return 'me'
+    if (friendIds.has(u._id)) return 'friends'
+    if (incomingIds.has(u._id)) return 'incoming'
+    if (pendingIds.has(u._id)) return 'pending'
+    return 'none'
+  }
+
+  async function handleAdd(u) {
+    try {
+      await authApi.sendFriendRequest(u._id)
+      setPendingIds(prev => new Set(prev).add(u._id))
+      toast.success(`Friend request sent to ${u.name}`)
+    } catch (err) { toast.error(err.message) }
+  }
+
+  async function handleAccept(u) {
+    const req = requestFrom[u._id]
+    try {
+      await authApi.respondFriendRequest(req?.from || u._id, true)
+      toast.success(`You and ${u.name} are now friends!`)
+      loadFriends()
+    } catch (err) { toast.error(err.message) }
+  }
+
+  async function handleRemove(u) {
+    try {
+      await authApi.removeFriend(u._id)
+      toast.success(`Removed ${u.name} from friends`)
+      loadFriends()
+    } catch (err) { toast.error(err.message) }
+  }
 
   if (loading) return <PageWrapper><SkeletonPage /></PageWrapper>
 
@@ -226,6 +337,7 @@ export default function Users() {
               key={u._id || u.email}
               user={u}
               isMe={u.email === me?.email}
+              status={getStatus(u)}
               index={i}
               onClick={() => setSelected(u)}
             />
@@ -238,7 +350,11 @@ export default function Users() {
         <UserProfileModal
           user={selected}
           isMe={selected.email === me?.email}
+          status={getStatus(selected)}
           onClose={() => setSelected(null)}
+          onAdd={handleAdd}
+          onAccept={handleAccept}
+          onRemove={handleRemove}
         />
       )}
     </PageWrapper>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Bell, Sun, Moon, Maximize2, X, PanelLeft, Zap, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
+import { SamsungConfirm } from '../ui/SamsungPopup'
 import { useTheme } from '../../hooks/useTheme'
 import { getStoredTheme } from '../../data/themes'
 import { getLevelInfo } from '../../data/levels'
@@ -101,6 +102,7 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
   const { user, notifications, dismissNotification, clearNotifications, logout } = useAuth()
   const { currentTheme, toggle } = useTheme()
   const [search,      setSearch]      = useState('')
+  const [logoutConfirm, setLogoutConfirm] = useState(false)
   const [notifOpen,   setNotifOpen]   = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const notifRef   = useRef(null)
@@ -134,7 +136,8 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
     else document.exitFullscreen()
   }
 
-  async function handleLogout() {
+  async function doLogout() {
+    setLogoutConfirm(false)
     await logout()
     navigate('/login')
   }
@@ -142,6 +145,7 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
   const unreadCount = notifications.length
 
   return (
+    <>
     <header
       className="flex items-center gap-2 px-4 h-14 flex-shrink-0 z-40"
       style={{
@@ -248,10 +252,23 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
             open={profileOpen}
             user={user}
             onNavigate={path => { navigate(path); setProfileOpen(false) }}
-            onLogout={handleLogout}
+            onLogout={() => { setProfileOpen(false); setLogoutConfirm(true) }}
           />
         </div>
       </div>
     </header>
+
+      <SamsungConfirm
+        open={logoutConfirm}
+        onClose={() => setLogoutConfirm(false)}
+        onConfirm={doLogout}
+        title="Sign Out?"
+        message="Are you sure you want to sign out of Quiz Academy?"
+        icon="🚪"
+        confirmLabel="Sign Out"
+        cancelLabel="Stay"
+        danger
+      />
+    </>
   )
 }

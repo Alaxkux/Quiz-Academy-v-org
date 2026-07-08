@@ -16,6 +16,7 @@ const QuestionSchema = new mongoose.Schema({
 const CourseSchema = new mongoose.Schema({
   code:        { type: String, required: true, unique: true, trim: true }, // e.g. 'IFT 203'
   name:        { type: String, default: '' },  // display name e.g. 'Web Technologies'
+  shareToken:  { type: String, unique: true, sparse: true }, // for public sharing
   icon:        { type: String, default: '📚' },
   color:       { type: String, default: 'rgba(108,142,255,.12)' },
   description: { type: String, default: '' },

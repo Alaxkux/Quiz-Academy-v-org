@@ -18,6 +18,23 @@ const crypto    = require('crypto');
 const rateLimit = require('express-rate-limit');
 const User      = require('../models/User');
 const { requireAuth, generateToken } = require('../middleware/auth');
+const { sanitizeHistoryEntry } = require('../utils/scoring');
+
+// Recompute aggregate stats from a validated history array so a client can't
+// desync totalPoints/totalXP from what its own history entries add up to.
+function deriveStatsFromHistory(history, incomingStats = {}) {
+  const totals = (history || []).reduce((acc, h) => {
+    acc.totalPoints += Number(h.points)   || 0;
+    acc.totalXP     += Number(h.xpEarned) || 0;
+    return acc;
+  }, { totalPoints: 0, totalXP: 0 });
+  return {
+    ...incomingStats,
+    totalPoints: totals.totalPoints,
+    totalXP:     totals.totalXP,
+    quizzesTaken: (history || []).length,
+  };
+}
 
 const router = express.Router();
 
@@ -56,6 +73,11 @@ function sanitize(str, maxLen = 300) {
     .replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;').trim().slice(0, maxLen);
+}
+
+// ── Escape regex special characters (prevents ReDoS from user-controlled search input) ──
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // ================================================================
@@ -224,8 +246,17 @@ router.put('/me', requireAuth, async (req, res) => {
     }
     if (settings !== undefined) user.settings = { ...user.settings, ...settings };
     if (lastDailyChallenge !== undefined) user.lastDailyChallenge = lastDailyChallenge;
-    if (stats        !== undefined) user.stats        = { ...(user.stats.toObject ? user.stats.toObject() : user.stats), ...stats };
-    if (history      !== undefined) user.history      = history;
+    if (history !== undefined) {
+      const safeHistory = history.map(sanitizeHistoryEntry);
+      user.history = safeHistory;
+      const baseStats = stats !== undefined ? stats : (user.stats.toObject ? user.stats.toObject() : user.stats);
+      user.stats = deriveStatsFromHistory(safeHistory, baseStats);
+    } else if (stats !== undefined) {
+      // No history change this call — allow non-score stat fields (streak, categoriesPlayed, etc.)
+      // through, but keep totalPoints/totalXP pinned to what history already supports.
+      const current = user.stats.toObject ? user.stats.toObject() : user.stats;
+      user.stats = { ...current, ...stats, totalPoints: current.totalPoints, totalXP: current.totalXP };
+    }
     if (achievements !== undefined) user.achievements = achievements;
     if (notifications !== undefined) user.notifications = notifications.slice(0, 50);
 
@@ -242,7 +273,13 @@ router.put('/me', requireAuth, async (req, res) => {
 // ================================================================
 router.post('/sync', requireAuth, async (req, res) => {
   try {
-    const user    = req.user;
+    const user = req.user;
+    // Capture original totals BEFORE any assignment below overwrites them —
+    // these are the only trustworthy numbers until we recompute from history.
+    const originalStats = user.stats.toObject ? user.stats.toObject() : user.stats;
+    const originalTotalPoints = originalStats.totalPoints;
+    const originalTotalXP     = originalStats.totalXP;
+
     const allowed = ['stats','history','achievements','notifications','settings','lastDailyChallenge','isNewUser','bio','avatar','name'];
     allowed.forEach(key => {
       if (req.body[key] !== undefined) {
@@ -251,6 +288,17 @@ router.post('/sync', requireAuth, async (req, res) => {
                   : req.body[key];
       }
     });
+    // History/points/XP are never trusted as-is — clamp against the theoretical
+    // max for each entry and recompute totals from the sanitized history.
+    if (req.body.history !== undefined) {
+      const safeHistory = user.history.map(sanitizeHistoryEntry);
+      user.history = safeHistory;
+      user.stats   = deriveStatsFromHistory(safeHistory, user.stats.toObject ? user.stats.toObject() : user.stats);
+    } else if (req.body.stats !== undefined) {
+      // stats-only sync (e.g. streak update) shouldn't move totalPoints/totalXP on its own
+      user.stats.totalPoints = originalTotalPoints;
+      user.stats.totalXP     = originalTotalXP;
+    }
     await user.save();
     res.json({ ok: true, user: user.toPublicJSON() });
   } catch (err) {
@@ -387,5 +435,132 @@ router.get('/config', (req, res) => {
     googleClientId: process.env.GOOGLE_CLIENT_ID || null
   });
 });
+
+// ════════════════════════════════════════════════════════
+// SOCIAL / FRIENDS SYSTEM
+// ════════════════════════════════════════════════════════
+
+// ── Send friend request ──
+router.post('/friends/request', requireAuth, async (req, res) => {
+  try {
+    const { targetUserId } = req.body
+    if (!targetUserId) return res.status(400).json({ error: 'targetUserId required' })
+    if (targetUserId === req.user._id.toString())
+      return res.status(400).json({ error: 'Cannot send friend request to yourself' })
+
+    const target = await User.findById(targetUserId)
+    if (!target) return res.status(404).json({ error: 'User not found' })
+
+    // Check not already friends or pending
+    const alreadyFriends = (req.user.friends || []).includes(targetUserId)
+    const alreadyPending = (target.friendRequests || []).some(r => r.from?.toString() === req.user._id.toString())
+    if (alreadyFriends) return res.status(400).json({ error: 'Already friends' })
+    if (alreadyPending) return res.status(400).json({ error: 'Request already sent' })
+
+    await User.findByIdAndUpdate(targetUserId, {
+      $push: {
+        friendRequests: { from: req.user._id, name: req.user.name, avatar: req.user.avatar, date: new Date() },
+        notifications:  { message: `${req.user.name} sent you a friend request 👋`, type: 'friend', date: new Date() },
+      }
+    })
+    res.json({ message: 'Friend request sent' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Accept/decline friend request ──
+router.post('/friends/respond', requireAuth, async (req, res) => {
+  try {
+    const { fromUserId, accept } = req.body
+    const user = await User.findById(req.user._id)
+    user.friendRequests = (user.friendRequests || []).filter(r => r.from?.toString() !== fromUserId)
+
+    if (accept) {
+      if (!(user.friends || []).includes(fromUserId)) user.friends = [...(user.friends || []), fromUserId]
+      await user.save()
+      await User.findByIdAndUpdate(fromUserId, {
+        $addToSet: { friends: req.user._id },
+        $push: { notifications: { message: `${req.user.name} accepted your friend request 🎉`, type: 'friend', date: new Date() } }
+      })
+      res.json({ message: 'Friend added' })
+    } else {
+      await user.save()
+      res.json({ message: 'Request declined' })
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Get friends list ──
+router.get('/friends', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('friends', 'name avatar stats achievements')
+    const requests = (user.friendRequests || []).slice(0, 20)
+    res.json({ friends: user.friends || [], requests })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Remove friend ──
+router.delete('/friends/:friendId', requireAuth, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user._id, { $pull: { friends: req.params.friendId } })
+    await User.findByIdAndUpdate(req.params.friendId, { $pull: { friends: req.user._id } })
+    res.json({ message: 'Friend removed' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Send quiz/achievement to friend ──
+router.post('/friends/send', requireAuth, async (req, res) => {
+  try {
+    const { friendId, type, data } = req.body
+    // type: 'quiz' | 'score' | 'achievement' | 'challenge'
+    const messages = {
+      quiz:        `${req.user.name} shared a quiz with you 📚`,
+      score:       `${req.user.name} shared their score with you 🏆`,
+      achievement: `${req.user.name} unlocked an achievement 🎖️`,
+      challenge:   `${req.user.name} challenged you to a quiz! ⚡`,
+    }
+    await User.findByIdAndUpdate(friendId, {
+      $push: {
+        notifications: {
+          message: messages[type] || `${req.user.name} sent you something`,
+          type:    'friend',
+          data:    { type, ...data, from: req.user._id, fromName: req.user.name },
+          date:    new Date(),
+        }
+      }
+    })
+    res.json({ message: 'Sent successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Search users (for adding friends) ──
+router.get('/users/search', requireAuth, async (req, res) => {
+  try {
+    const { q } = req.query
+    if (!q || q.length < 2) return res.json({ users: [] })
+    const safeQ = escapeRegex(q)
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: req.user._id } },
+        { $or: [
+          { name:  { $regex: safeQ, $options: 'i' } },
+          { email: { $regex: safeQ, $options: 'i' } },
+        ]}
+      ]
+    }).select('name avatar stats.totalPoints stats.quizzesTaken').limit(10)
+    res.json({ users })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 module.exports = router;

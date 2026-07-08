@@ -8,6 +8,7 @@ import QuestionUploader from '../../components/admin/QuestionUploader'
 import { useAuth } from '../../hooks/useAuth'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
 import Button from '../../components/ui/Button'
+import SamsungPopup, { SamsungConfirm } from '../../components/ui/SamsungPopup'
 import Avatar from '../../components/ui/Avatar'
 
 // ─────────────────────────────────────────────
@@ -398,7 +399,7 @@ function QuestionUploadPanel({ courses }) {
           <option value="">— Choose a course —</option>
           {courses.map(c => (
             <option key={c.code} value={c.code}>
-              {c.icon} {c.code} {c.questionCount !== undefined ? `(${c.questionCount} questions)` : ''}
+              {c.icon} {c.name || c.code} {c.questionCount !== undefined ? `(${c.questionCount} questions)` : ''}
             </option>
           ))}
         </select>
@@ -429,7 +430,11 @@ export default function AdminDashboard() {
   const [loading,  setLoading]  = useState(false)
   const [msg,          setMsg]          = useState(null)  // { text, undoFn } | null
   const [pinModal,     setPinModal]     = useState(false)
-  const [dbCourseList, setDbCourseList] = useState([])
+  const [dbCourseList,  setDbCourseList]  = useState([])
+  const [editingCourse, setEditingCourse] = useState(null) // { code, name }
+  const [editName,      setEditName]      = useState('')
+  const [saveError,     setSaveError]     = useState('')
+  const [errorOpen,     setErrorOpen]     = useState(false)
 
   // Check PIN status from MongoDB on mount
   useEffect(() => {
@@ -438,6 +443,20 @@ export default function AdminDashboard() {
       .catch(() => {})
       .finally(() => setPinLoading(false))
   }, [])
+
+  async function saveCourseName() {
+    if (!editName.trim()) return
+    try {
+      await coursesApi.update(editingCourse.code, { name: editName.trim() })
+      setDbCourseList(prev => prev.map(co =>
+        co.code === editingCourse.code ? { ...co, name: editName.trim() } : co
+      ))
+      setEditingCourse(null)
+    } catch (err) {
+      setSaveError(err.message || 'Failed to save course name')
+      setErrorOpen(true)
+    }
+  }
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -522,6 +541,7 @@ export default function AdminDashboard() {
   const totalQuizzes = users.reduce((s, u) => s + (u.stats?.quizzesTaken || 0), 0)
 
   return (
+    <>
     <PageWrapper>
       <PageHeader
         title="🛡️ Admin Dashboard"
@@ -614,5 +634,36 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
     </PageWrapper>
+
+    {/* ── Edit Course Title Modal ── */}
+    <SamsungPopup
+      open={!!editingCourse}
+      onClose={() => setEditingCourse(null)}
+      title="Edit Course Title"
+      icon="✏️"
+    >
+      <div className="flex flex-col gap-3">
+        <input
+          value={editName}
+          onChange={e => setEditName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && saveCourseName()}
+          placeholder="Course title..."
+          className="w-full px-4 py-3 rounded-2xl text-base outline-none"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--t1)', fontSize: 16 }}
+          autoFocus
+        />
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" className="flex-1" onClick={() => setEditingCourse(null)}>Cancel</Button>
+          <Button variant="primary" size="md" className="flex-1" onClick={saveCourseName}>Save</Button>
+        </div>
+      </div>
+    </SamsungPopup>
+
+    {/* ── Error popup ── */}
+    <SamsungPopup open={errorOpen} onClose={() => setErrorOpen(false)} title="Error" icon="⚠️">
+      <p className="text-sm text-secondary mb-4">{saveError}</p>
+      <Button variant="primary" size="md" className="w-full" onClick={() => setErrorOpen(false)}>OK</Button>
+    </SamsungPopup>
+    </>
   )
 }

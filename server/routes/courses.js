@@ -167,5 +167,47 @@ router.post('/:code/questions', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to upload questions' })
   }
 })
+// ── GET shared course by share token (public — no auth required) ──
+router.get('/shared/:token', async (req, res) => {
+  try {
+    const course = await Course.findOne({ shareToken: req.params.token, isActive: true })
+    if (!course) return res.status(404).json({ error: 'Shared course not found or no longer active' })
+    res.json({
+      code:        course.code,
+      name:        course.name || course.code,
+      icon:        course.icon || '📚',
+      description: course.description || '',
+      questions:   (course.questions || []).map(q => ({
+        q:          q.q,
+        opts:       q.opts,
+        a:          q.a,
+        difficulty: q.difficulty,
+        // Don't send explanation in shared mode
+      })),
+      questionCount: course.questions?.length || 0,
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── POST generate share token for a course ──
+router.post('/:code/share', requireAuth, async (req, res) => {
+  try {
+    const course = await Course.findOne({ code: req.params.code })
+    if (!course) return res.status(404).json({ error: 'Course not found' })
+
+    // Generate a short share token if not exists
+    if (!course.shareToken) {
+      course.shareToken = require('crypto').randomBytes(8).toString('hex')
+      await course.save()
+    }
+    const shareUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/quiz/shared/${course.shareToken}`
+    res.json({ shareToken: course.shareToken, shareUrl })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 
 module.exports = router

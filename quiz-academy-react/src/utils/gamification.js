@@ -44,25 +44,28 @@ export function checkAchievements(user) {
   }
 }
 
-// ── UPDATE STREAK ──
+// ── UPDATE STREAK (standard day-boundary comparison, like Duolingo/most streak apps) ──
+function startOfDay(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 export function updateStreak(stats) {
-  const today = new Date().toDateString()
-  const last  = stats?.lastQuizDate
+  const today = startOfDay(new Date())
+  const last  = stats?.lastQuizDate ? startOfDay(new Date(stats.lastQuizDate)) : null
 
   if (!last) {
     return { ...stats, streak: 1, lastQuizDate: new Date().toISOString() }
   }
 
-  const lastDate = new Date(last).toDateString()
-  const yesterday = new Date(Date.now() - 86400000).toDateString()
+  // Whole-day difference between local midnights — safe across DST,
+  // unlike comparing raw 24h (86400000ms) windows.
+  const dayDiff = Math.round((today - last) / 86400000)
 
-  if (lastDate === today) return stats // already quizzed today
-
-  const newStreak = lastDate === yesterday
-    ? (stats.streak || 0) + 1
-    : 1
-
-  return { ...stats, streak: newStreak, lastQuizDate: new Date().toISOString() }
+  if (dayDiff === 0) return stats                    // already checked in today — no change
+  if (dayDiff === 1) return { ...stats, streak: (stats.streak || 0) + 1, lastQuizDate: new Date().toISOString() } // consecutive day
+  return { ...stats, streak: 1, lastQuizDate: new Date().toISOString() } // missed a day — streak resets to 1
 }
 
 // ── DAILY CHALLENGE ──

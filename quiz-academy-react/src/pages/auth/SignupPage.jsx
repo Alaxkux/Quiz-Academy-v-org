@@ -1,70 +1,93 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Eye, EyeOff, ArrowRight, Mail, Lock, User } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import AuthShell from '../../components/auth/AuthShell'
-import FormField, { PwStrength } from '../../components/auth/FormField'
-import Button from '../../components/ui/Button'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi } from '../../api/auth'
 
-const QUOTE = {
-  text:   'The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.',
-  author: 'Brian Herbert',
+function StrengthBar({ password }) {
+  const score = [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(password)).length
+  const labels = ['','Weak','Fair','Good','Strong']
+  const colors = ['','#ff6b8a','#F5C842','#6C8EFF','#4DFFC3']
+  if (!password) return null
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <div className="flex gap-1 flex-1">
+        {[1,2,3,4].map(i => (
+          <div key={i} className="h-1 flex-1 rounded-full transition-all"
+            style={{ background: i <= score ? colors[score] : 'rgba(255,255,255,0.1)' }} />
+        ))}
+      </div>
+      <span className="text-xs font-medium" style={{ color: colors[score] }}>{labels[score]}</span>
+    </div>
+  )
+}
+
+function InputField({ label, icon: Icon, type = 'text', value, onChange, error, placeholder, autoComplete, rightSlot }) {
+  const [focused, setFocused] = useState(false)
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(237,240,250,0.7)' }}>{label}</label>
+      <div className="relative">
+        {Icon && <Icon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgba(237,240,250,0.3)' }} />}
+        <input
+          type={type} value={value} onChange={onChange} placeholder={placeholder} autoComplete={autoComplete}
+          className="w-full pr-4 py-4 rounded-2xl text-base outline-none transition-all"
+          style={{
+            paddingLeft: Icon ? '2.75rem' : '1rem',
+            background: 'rgba(255,255,255,0.05)',
+            border: `1.5px solid ${error ? '#ff6b8a' : focused ? '#6C8EFF' : 'rgba(255,255,255,0.1)'}`,
+            color: '#EDF0FA', fontSize: 16,
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        {rightSlot && <div className="absolute right-4 top-1/2 -translate-y-1/2">{rightSlot}</div>}
+      </div>
+      {error && <p className="text-xs mt-1.5" style={{ color: '#ff6b8a' }}>{error}</p>}
+    </div>
+  )
 }
 
 export default function SignupPage() {
-  const navigate  = useNavigate()
+  const navigate = useNavigate()
   const { signup, googleLogin, addNotification } = useAuth()
-
-  const [form, setForm]     = useState({ name: '', email: '', password: '', confirm: '' })
-  const [errors, setErrors] = useState({})
+  const [form,    setForm]    = useState({ name: '', email: '', password: '', confirm: '' })
+  const [errors,  setErrors]  = useState({})
   const [loading, setLoading] = useState(false)
+  const [showPw,  setShowPw]  = useState(false)
   const [googleClientId, setGoogleClientId] = useState(null)
   const googleBtnRef = useRef(null)
 
   useEffect(() => {
-    authApi.getConfig().then(data => {
-      if (data?.googleClientId) setGoogleClientId(data.googleClientId)
-    })
+    authApi.getConfig().then(d => { if (d?.googleClientId) setGoogleClientId(d.googleClientId) })
   }, [])
 
   useEffect(() => {
     if (!googleClientId || !window.google || !googleBtnRef.current) return
-    window.google.accounts.id.initialize({
-      client_id:  googleClientId,
-      callback:   handleGoogleResponse,
-      auto_select: false,
-    })
+    window.google.accounts.id.initialize({ client_id: googleClientId, callback: handleGoogleResponse })
     window.google.accounts.id.renderButton(googleBtnRef.current, {
-      theme:          'outline',
-      size:           'large',
-      width:          googleBtnRef.current.offsetWidth || 380,
-      text:           'signup_with',
-      shape:          'rectangular',
-      logo_alignment: 'left',
+      theme: 'outline', size: 'large', width: googleBtnRef.current.offsetWidth || 360,
+      text: 'signup_with', shape: 'pill', logo_alignment: 'left',
     })
   }, [googleClientId])
 
-  async function handleGoogleResponse(response) {
+  async function handleGoogleResponse(res) {
     try {
-      const user = await googleLogin(response.credential)
+      const user = await googleLogin(res.credential)
       addNotification(`Welcome to Quiz Academy, ${user.name}! 🎉`, 'success')
       navigate('/dashboard', { replace: true })
-    } catch (err) {
-      toast.error(err.message || 'Google sign-up failed')
-    }
+    } catch (err) { toast.error(err.message || 'Google sign-up failed') }
   }
 
-  function setField(key, val) {
-    setForm(v => ({ ...v, [key]: val }))
-    setErrors(v => ({ ...v, [key]: '' }))
-  }
+  function set(key, val) { setForm(v => ({...v,[key]:val})); setErrors(v => ({...v,[key]:''})) }
 
   function validate() {
     const e = {}
     if (!form.name.trim() || form.name.trim().length < 2) e.name = 'Name must be at least 2 characters'
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email'
-    if (!form.password || form.password.length < 8) e.password = 'Password must be at least 8 characters'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email'
+    if (form.password.length < 8) e.password = 'Password must be at least 8 characters'
     if (form.password !== form.confirm) e.confirm = 'Passwords do not match'
     setErrors(e)
     return !Object.keys(e).length
@@ -79,93 +102,86 @@ export default function SignupPage() {
       addNotification(`Welcome to Quiz Academy, ${user.name}! 🎉`, 'success')
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      if (err.message?.toLowerCase().includes('email')) setErrors(v => ({ ...v, email: err.message }))
-      else setErrors(v => ({ ...v, confirm: err.message || 'Signup failed' }))
-    } finally {
-      setLoading(false)
-    }
+      if (err.message?.toLowerCase().includes('email')) setErrors(v => ({...v, email: err.message}))
+      else setErrors(v => ({...v, confirm: err.message || 'Signup failed'}))
+    } finally { setLoading(false) }
   }
 
   return (
-    <AuthShell quote={QUOTE}>
-      <div>
-        <h1 className="font-display font-bold text-2xl text-primary mb-1">Create Account</h1>
-        <p className="text-secondary text-sm mb-7">Start your learning adventure today</p>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: '#07090E' }}>
+      {/* Background */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(108,142,255,0.05) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10 pointer-events-none" style={{ background: '#6C8EFF' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-08 pointer-events-none" style={{ background: '#4DFFC3' }} />
+
+      <motion.div className="relative w-full mx-auto px-6 py-10" style={{ maxWidth: 460 }}
+        initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 mb-10">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-lg"
+            style={{ background: 'linear-gradient(135deg,#6C8EFF,#4DFFC3)' }}>Q</div>
+          <div>
+            <div className="font-bold text-base" style={{ color: '#EDF0FA' }}>Quiz Academy</div>
+            <div className="text-xs" style={{ color: 'rgba(237,240,250,0.35)' }}>Free forever</div>
+          </div>
+        </div>
+
+        <h1 className="font-display font-black mb-1" style={{ fontSize: '2rem', color: '#EDF0FA', letterSpacing: '-0.03em' }}>
+          Create account
+        </h1>
+        <p className="mb-8" style={{ color: 'rgba(237,240,250,0.5)' }}>Start your learning adventure today</p>
 
         {/* Google */}
         {googleClientId && (
           <>
-            <div ref={googleBtnRef} className="w-full mb-4" />
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              <span className="text-xs text-muted">or sign up with email</span>
-              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <div ref={googleBtnRef} className="w-full mb-4 overflow-hidden rounded-2xl" />
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <span className="text-sm" style={{ color: 'rgba(237,240,250,0.3)' }}>or with email</span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
             </div>
           </>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <FormField
-            label="Full Name"
-            id="name"
-            placeholder="John Doe"
-            value={form.name}
-            onChange={e => setField('name', e.target.value)}
-            error={errors.name}
-            maxLength={60}
-            autoComplete="name"
-          />
-          <FormField
-            label="Email Address"
-            id="email"
-            type="email"
-            placeholder="your@email.com"
-            value={form.email}
-            onChange={e => setField('email', e.target.value)}
-            error={errors.email}
-            autoComplete="email"
-          />
-          <FormField
-            label="Password"
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={form.password}
-            onChange={e => setField('password', e.target.value)}
-            error={errors.password}
-            autoComplete="new-password"
-          />
-          <PwStrength password={form.password} />
-          <FormField
-            label="Confirm Password"
-            id="confirm"
-            type="password"
-            placeholder="••••••••"
-            value={form.confirm}
-            onChange={e => setField('confirm', e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleSubmit()}
-            error={errors.confirm}
-            autoComplete="new-password"
-          />
+        <div className="flex flex-col gap-4">
+          <InputField label="Full Name" icon={User} value={form.name} onChange={e => set('name', e.target.value)}
+            placeholder="John Doe" error={errors.name} autoComplete="name" />
+          <InputField label="Email" icon={Mail} type="email" value={form.email} onChange={e => set('email', e.target.value)}
+            placeholder="your@email.com" error={errors.email} autoComplete="email" />
+          <div>
+            <InputField label="Password" icon={Lock} type={showPw ? 'text' : 'password'}
+              value={form.password} onChange={e => set('password', e.target.value)}
+              placeholder="Min. 8 characters" error={errors.password} autoComplete="new-password"
+              rightSlot={
+                <button type="button" onClick={() => setShowPw(v => !v)} style={{ color: 'rgba(237,240,250,0.4)' }}>
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
+            />
+            <StrengthBar password={form.password} />
+          </div>
+          <InputField label="Confirm Password" icon={Lock} type="password"
+            value={form.confirm} onChange={e => set('confirm', e.target.value)}
+            placeholder="Repeat password" error={errors.confirm} autoComplete="new-password" />
 
-          <Button
-            variant="primary"
-            size="lg"
-            loading={loading}
-            className="w-full mt-2"
-            type="submit"
-          >
-            Create Account
-          </Button>
-        </form>
+          <motion.button onClick={handleSubmit} disabled={loading}
+            className="w-full py-4 rounded-2xl font-bold text-base text-white flex items-center justify-center gap-2 mt-2"
+            style={{ background: loading ? 'rgba(108,142,255,0.5)' : 'linear-gradient(135deg,#6C8EFF,#4DFFC3)', fontSize: 16 }}
+            whileTap={{ scale: 0.98 }}>
+            {loading
+              ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <>Create Account <ArrowRight size={18} /></>
+            }
+          </motion.button>
+        </div>
 
-        <p className="text-center text-sm text-secondary mt-6">
-          Have an account?{' '}
-          <Link to="/login" className="font-medium" style={{ color: 'var(--accent)' }}>
-            Sign In
-          </Link>
+        <p className="text-center text-sm mt-6" style={{ color: 'rgba(237,240,250,0.4)' }}>
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold" style={{ color: '#6C8EFF' }}>Sign in</Link>
         </p>
-      </div>
-    </AuthShell>
+      </motion.div>
+    </div>
   )
 }

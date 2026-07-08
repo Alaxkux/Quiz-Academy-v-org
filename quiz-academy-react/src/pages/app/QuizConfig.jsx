@@ -98,7 +98,10 @@ export default function QuizConfig() {
     qs = shuffle(qs).slice(0, getCount())
 
     const started = startQuiz({
-      category:         category || displayName,
+      // Always store the human-readable name as the quiz's category (used in
+      // history/leaderboards) — `category` alone may be an internal course
+      // code (e.g. DB-generated custom course IDs), not a display name.
+      category:         displayName,
       questions:        qs,
       isDailyChallenge,
       revealMode,

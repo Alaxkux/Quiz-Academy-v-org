@@ -16,7 +16,12 @@ export default function CourseCard({ id, data, history = [], index = 0 }) {
     : (typeof data.questions?.length === 'number' ? data.questions.length : 0)
 
   function handleClick() {
-    navigate('/quiz/config', { state: { category: id } })
+    // Pass both the fetch key (id/code) AND a human-readable display name —
+    // QuizConfig needs `category` to look up questions, but should store the
+    // *name* as the quiz's category so history/leaderboards don't show raw
+    // codes like "AI_javascript_mr7ej7t6".
+    const displayName = data.name || data.title || (id.startsWith('custom_') ? 'Custom Course' : id)
+    navigate('/quiz/config', { state: { category: id, title: displayName } })
   }
 
   return (

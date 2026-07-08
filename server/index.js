@@ -1,5 +1,13 @@
 require('dotenv').config();
 
+const dns = require('dns');
+// Some ISP / mobile-hotspot DNS resolvers intermittently fail SRV record
+// queries (ESERVFAIL) even though the record is valid. This only affects
+// dns.resolve*() — used for the mongodb+srv:// SRV lookup — and does NOT
+// touch dns.lookup() (used for the actual shard connections), so it's safe
+// and won't cause the "Invalid IP address" issue from before.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
@@ -8,6 +16,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const mongoose = require('mongoose');
+const { startServer } = require('./utils/startServer');
 
 const app = express();
 
@@ -123,9 +132,10 @@ function scheduleDailyReminder() {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'API route not found' });
   }
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 
@@ -141,13 +151,21 @@ app.use((err, req, res, next) => {
 // ─────────────────────────────
 // 🚀 Start server
 // ─────────────────────────────
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT || 3000);
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Mongo: ${process.env.MONGO_URI ? '✅ set' : '❌ missing'}`);
-  console.log(`Email: ${process.env.EMAIL_USER ? '✅ set' : '⚠️ missing'}`);
+startServer(app, {
+  port: PORT,
+  host: '0.0.0.0',
+  onListening: (server, actualPort) => {
+    console.log(`\n🚀 Server running on port ${actualPort}`);
+    console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Mongo: ${process.env.MONGO_URI ? '✅ set' : '❌ missing'}`);
+    console.log(`Email: ${process.env.EMAIL_USER ? '✅ set' : '⚠️ missing'}`);
 
-  scheduleDailyReminder();
+    scheduleDailyReminder();
+  },
+  onError: (err) => {
+    console.error('❌ Failed to start server:', err.message);
+    process.exit(1);
+  }
 });

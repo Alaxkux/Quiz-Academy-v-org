@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AICreditsPopup } from '../../components/ui/SamsungPopup'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Sparkles, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -23,6 +24,7 @@ function QuestionPreview({ questions, topic, onPlay, onSave, onClear }) {
   const [expanded, setExpanded] = useState(null)
 
   return (
+    <>
     <motion.div
       className="rounded-2xl overflow-hidden"
       style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}
@@ -106,6 +108,7 @@ function QuestionPreview({ questions, topic, onPlay, onSave, onClear }) {
         </Button>
       </div>
     </motion.div>
+    </>
   )
 }
 
@@ -237,6 +240,7 @@ export default function AIGenerator() {
   ]
 
   return (
+    <>
     <PageWrapper>
       <PageHeader
         title="🤖 AI Question Generator"
@@ -414,5 +418,6 @@ export default function AIGenerator() {
         />
       )}
     </PageWrapper>
+    </>
   )
 }

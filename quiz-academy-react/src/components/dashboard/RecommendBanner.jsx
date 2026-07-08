@@ -4,9 +4,19 @@ import { Lightbulb, ArrowRight, X } from 'lucide-react'
 import { useState } from 'react'
 import { truncate } from '../../utils/format'
 
+const DISMISS_KEY = 'qa_weakTopicsBannerDismissed'
+
 export default function RecommendBanner({ weakTopics = [] }) {
   const navigate   = useNavigate()
-  const [dismissed, setDismissed] = useState(false)
+  // Persist across navigation/remounts within the same login session —
+  // sessionStorage is cleared on logout (see authStore.logout) so it
+  // naturally reappears the next time the person logs in.
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(DISMISS_KEY) === '1')
+
+  function dismiss() {
+    sessionStorage.setItem(DISMISS_KEY, '1')
+    setDismissed(true)
+  }
 
   if (!weakTopics.length || dismissed) return null
 
@@ -57,7 +67,7 @@ export default function RecommendBanner({ weakTopics = [] }) {
 
       {/* Dismiss */}
       <button
-        onClick={() => setDismissed(true)}
+        onClick={dismiss}
         className="flex-shrink-0 text-muted hover:text-primary transition-colors"
       >
         <X size={14} />

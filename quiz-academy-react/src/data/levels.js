@@ -49,12 +49,16 @@ export function calculateXP(percentage, questionCount, isDailyChallenge, difficu
 }
 
 export function calculateSmartAverage(history = []) {
-  if (!history.length) return 0
-  if (history.length === 1) return history[0].percentage
+  // Zero-score attempts (abandoned quizzes, accidental submits, etc.) shouldn't
+  // drag the running average down — treat them as not counted, same way a 0
+  // XP quiz already earns no XP.
+  const scored = history.filter(h => (h.percentage || 0) > 0)
+  if (!scored.length) return 0
+  if (scored.length === 1) return scored[0].percentage
   const alpha = 0.25
-  let avg = history[0].percentage
-  for (let i = 1; i < history.length; i++) {
-    avg = alpha * history[i].percentage + (1 - alpha) * avg
+  let avg = scored[0].percentage
+  for (let i = 1; i < scored.length; i++) {
+    avg = alpha * scored[i].percentage + (1 - alpha) * avg
   }
   return Math.round(avg)
 }
