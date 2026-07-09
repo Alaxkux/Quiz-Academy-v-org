@@ -77,7 +77,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
     >
       {/* ── Brand ── */}
       <div
-        className="flex items-center h-16 flex-shrink-0 px-4"
+        className={`flex items-center h-16 flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'px-4'}`}
       >
         <div
           className="w-9 h-9 rounded-2xl flex items-center justify-center font-display font-black text-sm text-white flex-shrink-0"
