@@ -6,6 +6,7 @@ import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import MobileNav from './MobileNav'
 import { PAGE_TITLES } from './PageWrapper'
+import { useScrollLock } from '../ui/Modal'
 
 export default function AppShell() {
   const location = useLocation()
@@ -31,6 +32,10 @@ export default function AppShell() {
 
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
+  // Same clean-popup rule applies to the mobile sidebar drawer: lock the
+  // background from scrolling while it's open, no blur behind it.
+  useScrollLock(sidebarOpen)
+
   useEffect(() => {
     const handle = e => { if (e.key === 'Escape') setSidebarOpen(false) }
     document.addEventListener('keydown', handle)
@@ -38,7 +43,10 @@ export default function AppShell() {
   }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg0)' }}>
+    // 100dvh (with 100vh fallback via CSS below) instead of h-screen (100vh) —
+    // 100vh doesn't account for iOS Safari's address bar show/hide, which was
+    // making the fixed topbar/bottom nav appear to shift during scroll.
+    <div className="flex overflow-hidden dvh-screen" style={{ background: 'var(--bg0)' }}>
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex flex-shrink-0">
@@ -55,7 +63,7 @@ export default function AppShell() {
           <>
             <motion.div
               className="fixed inset-0 z-40 md:hidden"
-              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }}
+              style={{ background: 'rgba(0,0,0,0.55)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{   opacity: 0 }}
@@ -63,7 +71,7 @@ export default function AppShell() {
             />
             <motion.div
               className="fixed left-0 top-0 bottom-0 z-50 md:hidden"
-              style={{ width: 'min(232px, 80vw)' }}
+              style={{ width: 'min(240px, 80vw)' }}
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{   x: '-100%' }}
@@ -97,7 +105,7 @@ export default function AppShell() {
             overscrollBehavior: 'contain',
             minHeight: 0,
             padding: '1rem',
-            paddingBottom: 'max(6rem, calc(57px + env(safe-area-inset-bottom) + 1.5rem))',
+            paddingBottom: 'max(6.5rem, calc(57px + env(safe-area-inset-bottom) + 2rem))',
           }}
           id="main-scroll-area"
         >

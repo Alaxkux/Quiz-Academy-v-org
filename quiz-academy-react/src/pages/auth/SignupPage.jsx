@@ -108,12 +108,20 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ background: '#07090E' }}>
-      {/* Background */}
+    <div className="dvh-screen relative flex items-center justify-center p-0 md:p-6" style={{ background: '#07090E' }}>
+      {/* Background — sibling of the scrollable card below, NOT a descendant
+          of it, and the outer box's height is locked to the viewport. That
+          combination is the actual fix: these blobs can never stretch or
+          drift with a tall form, and they don't scroll with the form either. */}
       <div className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(108,142,255,0.05) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10 pointer-events-none" style={{ background: '#6C8EFF' }} />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-08 pointer-events-none" style={{ background: '#4DFFC3' }} />
+
+      {/* Curved floating card on desktop, matching LoginPage — this is the
+          part that scrolls internally if the form is taller than the screen. */}
+      <div className="relative w-full h-full flex items-center justify-center overflow-y-auto md:rounded-[36px] md:border"
+        style={{ maxWidth: 640, background: 'rgba(7,9,14,0.4)', borderColor: 'rgba(108,142,255,0.15)' }}>
 
       <motion.div className="relative w-full mx-auto px-6 py-10" style={{ maxWidth: 460 }}
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -182,6 +190,8 @@ export default function SignupPage() {
           <Link to="/login" className="font-semibold" style={{ color: '#6C8EFF' }}>Sign in</Link>
         </p>
       </motion.div>
+      </div>
+      {/* close curved card wrapper */}
     </div>
   )
 }

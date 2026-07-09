@@ -80,7 +80,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#07090E' }}>
+    <div className="dvh-screen flex items-center justify-center p-0 md:p-6" style={{ background: '#07090E' }}>
+      {/* Curved floating auth card on desktop — flush edge-to-edge on mobile.
+          Height is locked to the viewport so the two columns below never grow
+          past it; each column scrolls independently instead. */}
+      <div className="flex w-full h-full md:rounded-[36px] overflow-hidden md:border"
+        style={{ maxWidth: 1180, borderColor: 'rgba(108,142,255,0.15)' }}>
+
       {/* ── Left panel — hidden on mobile ── */}
       <div className="hidden lg:flex flex-col justify-between relative overflow-hidden"
         style={{ width: '46%', flexShrink: 0, background: 'linear-gradient(160deg,#0C1018,#0a0f1a)' }}>
@@ -155,9 +161,10 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel — form ── */}
-      <div className="flex-1 flex items-center justify-center overflow-y-auto relative px-6 py-12">
+      <div className="flex-1 relative">
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(108,142,255,0.04) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+        <div className="h-full flex items-center justify-center overflow-y-auto relative px-6 py-12">
 
         <motion.div className="relative w-full" style={{ maxWidth: 420 }}
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -269,6 +276,9 @@ export default function LoginPage() {
             <Link to="/signup" className="font-semibold" style={{ color: '#6C8EFF' }}>Create one free</Link>
           </p>
         </motion.div>
+        </div>
+      </div>
+      {/* close curved card wrapper */}
       </div>
 
       {/* Confirm popup */}

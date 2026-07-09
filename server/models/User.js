@@ -67,6 +67,20 @@ const UserSchema = new mongoose.Schema({
     id: Number, message: String, type: String, timestamp: String, date: String
   }],
 
+  // ── Friends / social graph ──
+  // NOTE: these were previously referenced throughout server/routes/auth.js
+  // ($push/$addToSet to req.user.friends, friendRequests) but were never
+  // declared here. Mongoose's default strict mode silently drops writes to
+  // undeclared schema paths, so every "friend request" was returning a 200
+  // OK while saving nothing — this is why the feature never actually worked.
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  friendRequests: [{
+    from:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    name:   String,
+    avatar: String,
+    date:   { type: Date, default: Date.now }
+  }],
+
   settings: {
     theme:     { type: String, default: 'midnight' },
     timeLimit: { type: Number, default: 0 }

@@ -64,22 +64,23 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
 
   return (
     <aside
-      className="flex flex-col h-full overflow-hidden"
+      className="flex flex-col h-full overflow-hidden m-3 shadow-xl"
       style={{
-        width:      collapsed ? 64 : 232,
-        minWidth:   collapsed ? 64 : 232,
+        width:      collapsed ? 76 : 240,
+        minWidth:   collapsed ? 76 : 240,
+        maxHeight:  'calc(100% - 24px)',
         background: 'var(--bg1)',
-        borderRight: '1px solid var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: 28,
         transition: 'width 0.25s ease, min-width 0.25s ease',
       }}
     >
-      {/* ── Brand — same height as topbar (h-14) ── */}
+      {/* ── Brand ── */}
       <div
-        className="flex items-center h-14 flex-shrink-0 border-b px-4"
-        style={{ borderColor: 'var(--border)' }}
+        className="flex items-center h-16 flex-shrink-0 px-4"
       >
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center font-display font-black text-sm text-white flex-shrink-0"
+          className="w-9 h-9 rounded-2xl flex items-center justify-center font-display font-black text-sm text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, var(--accent), var(--green))' }}
         >
           Q
@@ -98,8 +99,6 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Mobile close btn — removed, tap backdrop to close instead */}
       </div>
 
       {/* ── Profile card — user chip + XP bar merged into one unified card ── */}
@@ -180,13 +179,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
                 onClick={isMobile ? onClose : undefined}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
-                  `flex items-center py-2.5 text-sm transition-all relative border-l-2
-                   ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
-                   ${item.wide && !collapsed ? 'col-span-2' : ''}
-                   ${isActive ? 'font-medium' : 'border-transparent hover:opacity-80'}`
+                  `flex items-center py-2.5 text-sm transition-all relative mx-2.5 mb-1 rounded-2xl
+                   ${collapsed ? 'justify-center px-0 w-10 h-10 mx-auto rounded-full' : 'gap-2.5 px-3.5'}
+                   ${isActive ? 'font-semibold' : 'hover:opacity-80'}`
                 }
                 style={({ isActive }) => isActive
-                  ? { color: 'var(--accent)', background: 'var(--accent-dim)', borderLeftColor: 'var(--accent)' }
+                  ? { color: '#fff', background: 'linear-gradient(135deg,var(--accent),var(--green))' }
                   : { color: 'var(--t2)' }
                 }
               >
@@ -225,16 +223,16 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
       </nav>
 
       {/* ── Footer ── */}
-      <div className="border-t py-2" style={{ borderColor: 'var(--border)' }}>
+      <div className="py-2 mx-2.5" style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         {user?.isAdmin && (
           <NavLink
             to="/admin"
             onClick={isMobile ? onClose : undefined}
             title={collapsed ? 'Admin' : undefined}
             className={({ isActive }) =>
-              `flex items-center py-2 text-sm transition-colors
-               ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
-               ${isActive ? 'text-accent' : 'text-muted hover:text-primary'}`
+              `flex items-center py-2 text-sm transition-colors mb-1 rounded-2xl
+               ${collapsed ? 'justify-center px-0 w-10 h-10 mx-auto rounded-full' : 'gap-2.5 px-3.5'}
+               ${isActive ? 'text-accent bg-[var(--accent-dim)]' : 'text-muted hover:text-primary'}`
             }
           >
             <Shield size={15} className="flex-shrink-0" />
@@ -246,9 +244,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
           onClick={isMobile ? onClose : undefined}
           title={collapsed ? 'Profile' : undefined}
           className={({ isActive }) =>
-            `flex items-center py-2 text-sm transition-colors
-             ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
-             ${isActive ? 'text-accent' : 'text-muted hover:text-primary'}`
+            `flex items-center py-2 text-sm transition-colors mb-1 rounded-2xl
+             ${collapsed ? 'justify-center px-0 w-10 h-10 mx-auto rounded-full' : 'gap-2.5 px-3.5'}
+             ${isActive ? 'text-accent bg-[var(--accent-dim)]' : 'text-muted hover:text-primary'}`
           }
         >
           <User size={15} className="flex-shrink-0" />
@@ -259,9 +257,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
           onClick={isMobile ? onClose : undefined}
           title={collapsed ? 'Settings' : undefined}
           className={({ isActive }) =>
-            `flex items-center py-2 text-sm transition-colors
-             ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}
-             ${isActive ? 'text-accent' : 'text-muted hover:text-primary'}`
+            `flex items-center py-2 text-sm transition-colors mb-1 rounded-2xl
+             ${collapsed ? 'justify-center px-0 w-10 h-10 mx-auto rounded-full' : 'gap-2.5 px-3.5'}
+             ${isActive ? 'text-accent bg-[var(--accent-dim)]' : 'text-muted hover:text-primary'}`
           }
         >
           <Settings size={15} className="flex-shrink-0" />
@@ -270,8 +268,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, onClose, isMobile
         <button
           onClick={() => setLogoutOpen(true)}
           title={collapsed ? 'Sign out' : undefined}
-          className={`w-full flex items-center py-2 text-sm transition-colors text-muted hover:text-red
-            ${collapsed ? 'justify-center px-0' : 'gap-2.5 px-4'}`}
+          className={`w-full flex items-center py-2 text-sm transition-colors text-muted hover:text-red rounded-2xl
+            ${collapsed ? 'justify-center px-0 w-10 h-10 mx-auto rounded-full' : 'gap-2.5 px-3.5'}`}
         >
           <LogOut size={15} className="flex-shrink-0" />
           {!collapsed && <span>Sign out</span>}

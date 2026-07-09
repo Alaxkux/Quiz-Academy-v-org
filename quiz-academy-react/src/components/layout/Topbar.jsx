@@ -4,6 +4,7 @@ import { Search, Bell, Sun, Moon, Maximize2, X, PanelLeft, Zap, Flame } from 'lu
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../hooks/useAuth'
 import { SamsungConfirm } from '../ui/SamsungPopup'
+import { useScrollLock } from '../ui/Modal'
 import { useTheme } from '../../hooks/useTheme'
 import { getStoredTheme } from '../../data/themes'
 import { getLevelInfo } from '../../data/levels'
@@ -143,6 +144,10 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
   }
 
   const unreadCount = notifications.length
+
+  // Keep the background from scrolling while a dropdown is open, same rule
+  // as the sidebar drawer and modals.
+  useScrollLock(notifOpen || profileOpen)
 
   return (
     <>

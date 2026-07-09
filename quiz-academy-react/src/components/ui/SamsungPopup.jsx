@@ -52,7 +52,7 @@ export default function SamsungPopup({
       {open && (
         <motion.div
           className="fixed inset-0 z-[300] flex items-center justify-center p-5"
-          style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}
+          style={{ background: 'rgba(0,0,0,0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

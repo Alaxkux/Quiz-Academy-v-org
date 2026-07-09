@@ -13,6 +13,15 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+/* Full-viewport height helper — 100vh fallback for older browsers, 100dvh
+   (dynamic viewport height) as the real fix for iOS Safari's address-bar
+   show/hide making fixed top/bottom bars appear to shift while scrolling.
+   Used by the app shell and both auth page layouts. */
+.dvh-screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
 body {
   font-size: 0.9375rem; /* 15px base */
   line-height: 1.6;

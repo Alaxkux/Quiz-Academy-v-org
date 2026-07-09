@@ -197,9 +197,11 @@ export default function LandingPage() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{
-          background: scrolled ? 'rgba(7,9,14,0.92)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(108,142,255,0.12)' : '1px solid transparent',
+          // Always has a solid-ish underlay now — was fully transparent until
+          // scrolled, which made it look broken/see-through against the hero.
+          background: scrolled ? 'rgba(7,9,14,0.92)' : 'rgba(7,9,14,0.55)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: scrolled ? '1px solid rgba(108,142,255,0.12)' : '1px solid rgba(108,142,255,0.06)',
         }}>
         <div className="flex items-center justify-between px-6 md:px-16 py-4 max-w-screen-xl mx-auto">
           <motion.div className="flex items-center gap-2.5"

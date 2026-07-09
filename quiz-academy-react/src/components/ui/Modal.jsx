@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Button from './Button'
 
-// ── Global scroll lock hook ──
-function useScrollLock(active) {
+// ── Global scroll lock hook — exported so Sidebar/Topbar dropdowns can reuse it ──
+export function useScrollLock(active) {
   useEffect(() => {
     if (!active) return
     const prev = document.body.style.overflow
@@ -43,7 +43,7 @@ export default function Modal({ open, onClose, title, icon, children, maxWidth =
       {open && (
         <motion.div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'rgba(0,0,0,0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -104,7 +104,7 @@ export function Overlay({ open, onClose, children, maxWidth = '480px' }) {
       {open && (
         <motion.div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'rgba(0,0,0,0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
