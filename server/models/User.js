@@ -64,7 +64,10 @@ const UserSchema = new mongoose.Schema({
   history:      { type: [QuizHistorySchema], default: [] },
   achievements: { type: [String], default: [] },
   notifications: [{
-    id: Number, message: String, type: String, timestamp: String, date: String
+    id: Number, message: String, type: String,
+    timestamp: String,
+    date: { type: Date, default: Date.now },
+    data: mongoose.Schema.Types.Mixed   // was missing — /friends/send pushes an extra `data` object here
   }],
 
   // ── Friends / social graph ──

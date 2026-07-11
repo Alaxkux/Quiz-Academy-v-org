@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Shuffle, Dumbbell, Search, Star, ChevronRight, X } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { getAllCourses, getRandomPool, shuffle } from '../../data/quizData'
+import { useScrollLock } from '../../components/ui/Modal'
 import {
   getDailyChallenge, isDailyChallengeCompleted,
   getDailyCountdown, getWeakTopics, getCategoryMastery
@@ -15,24 +16,7 @@ import useQuizStore from '../../store/quizStore'
 
 // ── Review Mistakes Course Picker modal ──
 function ReviewPicker({ open, onClose, history, allCourses }) {
-  // Scroll lock for iOS
-  useEffect(() => {
-    if (!open) return
-    const scrollY = window.scrollY
-    document.body.style.overflow = 'hidden'
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.left = '0'
-    document.body.style.right = '0'
-    return () => {
-      document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.left = ''
-      document.body.style.right = ''
-      window.scrollTo(0, scrollY)
-    }
-  }, [open])
+  useScrollLock(open)
   const navigate = useNavigate()
   const { setPendingConfig } = useQuizStore()
 
@@ -74,7 +58,7 @@ function ReviewPicker({ open, onClose, history, allCourses }) {
       {open && (
         <motion.div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.6)' }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={e => { if (e.target === e.currentTarget) onClose() }}
         >

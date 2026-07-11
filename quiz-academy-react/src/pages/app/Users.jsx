@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, UserPlus, UserCheck, Clock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi } from '../../api/auth'
+import { useScrollLock } from '../../components/ui/Modal'
 import { getLevelInfo, calculateSmartAverage } from '../../data/levels'
 import { fmtNum } from '../../utils/format'
 import PageWrapper, { PageHeader } from '../../components/layout/PageWrapper'
@@ -12,16 +13,26 @@ import ProgressBar from '../../components/ui/ProgressBar'
 import { SkeletonPage } from '../../components/ui/Skeleton'
 
 // ── Friend action button — reflects real relationship state ──
-function FriendActionButton({ user, status, onAdd, onAccept, onRemove }) {
+function FriendActionButton({ user, status, onAdd, onAccept, onRemove, onWave }) {
   if (status === 'friends') {
     return (
-      <button
-        onClick={() => onRemove(user)}
-        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors"
-        style={{ background: 'var(--green-dim)', border: '1px solid rgba(77,255,195,.25)', color: 'var(--green)' }}
-      >
-        <UserCheck size={13} /> Friends
-      </button>
+      <div className="flex gap-2 w-full">
+        <button
+          onClick={() => onWave(user)}
+          title="Wave 👋"
+          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm transition-transform hover:scale-105"
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}
+        >
+          👋
+        </button>
+        <button
+          onClick={() => onRemove(user)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors"
+          style={{ background: 'var(--green-dim)', border: '1px solid rgba(77,255,195,.25)', color: 'var(--green)' }}
+        >
+          <UserCheck size={13} /> Friends
+        </button>
+      </div>
     )
   }
   if (status === 'incoming') {
@@ -58,7 +69,8 @@ function FriendActionButton({ user, status, onAdd, onAccept, onRemove }) {
 }
 
 // ── User profile popup (public info only) ──
-function UserProfileModal({ user, isMe, status, onClose, onAdd, onAccept, onRemove }) {
+function UserProfileModal({ user, isMe, status, onClose, onAdd, onAccept, onRemove, onWave }) {
+  useScrollLock(!!user)
   if (!user) return null
   const xpInfo = getLevelInfo(user.stats?.totalXP || 0)
   const avg    = user.history?.length ? calculateSmartAverage(user.history) : 0
@@ -67,7 +79,7 @@ function UserProfileModal({ user, isMe, status, onClose, onAdd, onAccept, onRemo
     <AnimatePresence>
       <motion.div
         className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        style={{ background: 'rgba(0,0,0,0.6)' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -156,7 +168,7 @@ function UserProfileModal({ user, isMe, status, onClose, onAdd, onAccept, onRemo
             {/* Friend action */}
             {!isMe && (
               <div className="w-full pt-1">
-                <FriendActionButton user={user} status={status} onAdd={onAdd} onAccept={onAccept} onRemove={onRemove} />
+                <FriendActionButton user={user} status={status} onAdd={onAdd} onAccept={onAccept} onRemove={onRemove} onWave={onWave} />
               </div>
             )}
           </div>
@@ -282,6 +294,20 @@ export default function Users() {
     } catch (err) { toast.error(err.message) }
   }
 
+  const waveCooldowns = useRef({})
+  async function handleWave(u) {
+    const last = waveCooldowns.current[u._id] || 0
+    if (Date.now() - last < 60_000) {
+      toast(`Already waved — try again in a bit`, { icon: '⏱️' })
+      return
+    }
+    waveCooldowns.current[u._id] = Date.now()
+    try {
+      await authApi.sendToFriend(u._id, 'wave', {})
+      toast.success(`👋 Waved at ${u.name}`)
+    } catch (err) { toast.error(err.message) }
+  }
+
   if (loading) return <PageWrapper><SkeletonPage /></PageWrapper>
 
   const filtered = users.filter(u =>
@@ -355,6 +381,7 @@ export default function Users() {
           onAdd={handleAdd}
           onAccept={handleAccept}
           onRemove={handleRemove}
+          onWave={handleWave}
         />
       )}
     </PageWrapper>

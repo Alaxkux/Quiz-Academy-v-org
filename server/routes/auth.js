@@ -457,12 +457,18 @@ router.post('/friends/request', requireAuth, async (req, res) => {
     if (alreadyFriends) return res.status(400).json({ error: 'Already friends' })
     if (alreadyPending) return res.status(400).json({ error: 'Request already sent' })
 
+    // The friend request itself is the critical write — do it on its own so
+    // nothing about the notification side-effect can block it.
     await User.findByIdAndUpdate(targetUserId, {
-      $push: {
-        friendRequests: { from: req.user._id, name: req.user.name, avatar: req.user.avatar, date: new Date() },
-        notifications:  { message: `${req.user.name} sent you a friend request 👋`, type: 'friend', date: new Date() },
-      }
+      $push: { friendRequests: { from: req.user._id, name: req.user.name, avatar: req.user.avatar, date: new Date() } }
     })
+    try {
+      await User.findByIdAndUpdate(targetUserId, {
+        $push: { notifications: { message: `${req.user.name} sent you a friend request 👋`, type: 'friend', date: new Date() } }
+      })
+    } catch (notifErr) {
+      console.error('Friend request notification failed (request itself still succeeded):', notifErr.message)
+    }
     res.json({ message: 'Friend request sent' })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -479,10 +485,14 @@ router.post('/friends/respond', requireAuth, async (req, res) => {
     if (accept) {
       if (!(user.friends || []).includes(fromUserId)) user.friends = [...(user.friends || []), fromUserId]
       await user.save()
-      await User.findByIdAndUpdate(fromUserId, {
-        $addToSet: { friends: req.user._id },
-        $push: { notifications: { message: `${req.user.name} accepted your friend request 🎉`, type: 'friend', date: new Date() } }
-      })
+      await User.findByIdAndUpdate(fromUserId, { $addToSet: { friends: req.user._id } })
+      try {
+        await User.findByIdAndUpdate(fromUserId, {
+          $push: { notifications: { message: `${req.user.name} accepted your friend request 🎉`, type: 'friend', date: new Date() } }
+        })
+      } catch (notifErr) {
+        console.error('Accept-friend notification failed (friendship itself still saved):', notifErr.message)
+      }
       res.json({ message: 'Friend added' })
     } else {
       await user.save()
@@ -519,19 +529,26 @@ router.delete('/friends/:friendId', requireAuth, async (req, res) => {
 router.post('/friends/send', requireAuth, async (req, res) => {
   try {
     const { friendId, type, data } = req.body
-    // type: 'quiz' | 'score' | 'achievement' | 'challenge'
+    if (!friendId || !type) return res.status(400).json({ error: 'friendId and type required' })
+
+    // Casual Facebook-poke-style interactions, plus the existing content-share types.
     const messages = {
+      wave:        `${req.user.name} waved at you 👋`,
+      greet:       `${req.user.name} says hi! 😊`,
+      congrats:    `${req.user.name} sent you congrats 🎉`,
       quiz:        `${req.user.name} shared a quiz with you 📚`,
       score:       `${req.user.name} shared their score with you 🏆`,
       achievement: `${req.user.name} unlocked an achievement 🎖️`,
       challenge:   `${req.user.name} challenged you to a quiz! ⚡`,
     }
+    if (!messages[type]) return res.status(400).json({ error: 'Unknown interaction type' })
+
     await User.findByIdAndUpdate(friendId, {
       $push: {
         notifications: {
-          message: messages[type] || `${req.user.name} sent you something`,
+          message: messages[type],
           type:    'friend',
-          data:    { type, ...data, from: req.user._id, fromName: req.user.name },
+          data:    { type, ...(data || {}), from: req.user._id, fromName: req.user.name },
           date:    new Date(),
         }
       }

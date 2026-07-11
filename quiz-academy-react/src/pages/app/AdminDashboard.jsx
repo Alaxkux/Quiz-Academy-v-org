@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Trash2, Users, BookOpen, Lock, KeyRound, Eye, EyeOff, RefreshCw, Crown } from 'lucide-react'
 import { adminApi } from '../../api/admin'
+import { useScrollLock } from '../../components/ui/Modal'
 import { coursesApi } from '../../api/courses'
 import QuestionUploader from '../../components/admin/QuestionUploader'
 import { useAuth } from '../../hooks/useAuth'
@@ -184,6 +185,7 @@ function PinGate({ onUnlock, pinSet, onPinCreated }) {
 // CHANGE PIN MODAL
 // ─────────────────────────────────────────────
 function ChangePinModal({ onClose }) {
+  useScrollLock(true)
   const [currentPin, setCurrentPin] = useState('')
   const [newPin,     setNewPin]     = useState('')
   const [confirm,    setConfirm]    = useState('')
@@ -210,7 +212,7 @@ function ChangePinModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <motion.div

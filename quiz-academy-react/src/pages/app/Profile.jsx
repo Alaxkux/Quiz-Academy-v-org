@@ -12,7 +12,7 @@ import Avatar from '../../components/ui/Avatar'
 import ProgressBar from '../../components/ui/ProgressBar'
 import { SamsungConfirm } from '../../components/ui/SamsungPopup'
 
-function FriendCard({ friend, onRemove, onSendQuiz, onSendAchievement }) {
+function FriendCard({ friend, onRemove, onWave, onCongrats, onSendQuiz, onSendAchievement }) {
   const lvl = getLevelInfo(friend.stats?.totalXP || 0)
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl transition-all"
@@ -23,6 +23,16 @@ function FriendCard({ friend, onRemove, onSendQuiz, onSendAchievement }) {
         <div className="text-xs text-muted">Lv.{lvl.level} · {fmtNum(friend.stats?.totalPoints || 0)} pts</div>
       </div>
       <div className="flex gap-1.5">
+        <button onClick={() => onWave(friend)} title="Wave 👋"
+          className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-colors hover:scale-110"
+          style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
+          👋
+        </button>
+        <button onClick={() => onCongrats(friend)} title="Congrats 🎉"
+          className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-colors hover:scale-110"
+          style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
+          🎉
+        </button>
         <button onClick={() => onSendQuiz(friend)} title="Send Quiz"
           className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors text-muted hover:text-accent"
           style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
@@ -67,6 +77,7 @@ function RequestCard({ req, onAccept, onDecline }) {
 export default function Profile() {
   const { user, updateUser, addNotification } = useAuth()
   const fileRef = useRef(null)
+  const sendCooldowns = useRef({})
   const [tab, setTab] = useState('profile') // 'profile' | 'friends' | 'activity'
   const [name,   setName]   = useState(user?.name || '')
   const [bio,    setBio]    = useState(user?.bio  || '')
@@ -129,6 +140,17 @@ export default function Profile() {
   }
 
   async function sendToFriend(friend, type) {
+    // Light spam guard for the casual poke-style interactions — no need for
+    // this on quiz/achievement shares since those are already rare/deliberate.
+    if (type === 'wave' || type === 'congrats') {
+      const key = `${friend._id}:${type}`
+      const last = sendCooldowns.current[key] || 0
+      if (Date.now() - last < 60_000) {
+        toast(`Already sent — try again in a bit`, { icon: '⏱️' })
+        return
+      }
+      sendCooldowns.current[key] = Date.now()
+    }
     try {
       const recentHistory = (user?.history || []).slice(-1)[0]
       await authApi.sendToFriend(friend._id, type, {
@@ -136,8 +158,9 @@ export default function Profile() {
         category: recentHistory?.category,
         points:   recentHistory?.points,
       })
-      toast.success(`Sent to ${friend.name}!`)
-      addNotification(`📤 Sent ${type} to ${friend.name}`, 'success')
+      const labels = { wave: `👋 Waved at ${friend.name}`, congrats: `🎉 Sent congrats to ${friend.name}` }
+      toast.success(labels[type] || `Sent to ${friend.name}!`)
+      addNotification(labels[type] || `📤 Sent ${type} to ${friend.name}`, 'success')
     } catch (err) { toast.error(err.message) }
   }
 
@@ -376,6 +399,8 @@ export default function Profile() {
                 {friends.map(f => (
                   <FriendCard key={f._id} friend={f}
                     onRemove={fr => setConfirmRemove(fr)}
+                    onWave={fr => sendToFriend(fr, 'wave')}
+                    onCongrats={fr => sendToFriend(fr, 'congrats')}
                     onSendQuiz={fr => sendToFriend(fr, 'quiz')}
                     onSendAchievement={fr => sendToFriend(fr, 'achievement')} />
                 ))}
