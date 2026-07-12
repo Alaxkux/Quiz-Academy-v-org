@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shuffle, Dumbbell, Search, Star, ChevronRight, X } from 'lucide-react'
@@ -53,7 +54,7 @@ function ReviewPicker({ open, onClose, history, allCourses }) {
     })
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -117,7 +118,8 @@ function ReviewPicker({ open, onClose, history, allCourses }) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 

@@ -55,6 +55,7 @@ const useAuthStore = create((set, get) => ({
     await authApi.logout()
     // Clear session-scoped dismiss flags etc. so they reset fresh next login
     sessionStorage.removeItem('qa_weakTopicsBannerDismissed')
+    sessionStorage.removeItem('qa_decideLaterRequests')
     set({ user: null, notifications: [] })
   },
 

@@ -115,8 +115,8 @@ export default function SignupPage() {
           drift with a tall form, and they don't scroll with the form either. */}
       <div className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(108,142,255,0.05) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10 pointer-events-none" style={{ background: '#6C8EFF' }} />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-08 pointer-events-none" style={{ background: '#4DFFC3' }} />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] rounded-full blur-3xl opacity-10 pointer-events-none" style={{ background: '#6C8EFF' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl opacity-[0.06] pointer-events-none" style={{ background: '#6C8EFF' }} />
 
       {/* Curved floating card on desktop, matching LoginPage — this is the
           part that scrolls internally if the form is taller than the screen. */}
@@ -126,20 +126,17 @@ export default function SignupPage() {
       <motion.div className="relative w-full mx-auto px-6 py-10" style={{ maxWidth: 460 }}
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 
-        {/* Brand */}
-        <div className="flex items-center gap-2.5 mb-10">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-lg"
-            style={{ background: 'linear-gradient(135deg,#6C8EFF,#4DFFC3)' }}>Q</div>
-          <div>
-            <div className="font-bold text-base" style={{ color: '#EDF0FA' }}>Quiz Academy</div>
-            <div className="text-xs" style={{ color: 'rgba(237,240,250,0.35)' }}>Free forever</div>
+        {/* Brand — centered icon badge above heading, matching reference layout */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-14 h-14 rounded-3xl flex items-center justify-center font-black text-white text-2xl mb-4"
+            style={{ background: 'linear-gradient(135deg,#6C8EFF,#4DFFC3)', boxShadow: '0 8px 24px rgba(108,142,255,0.35)' }}>
+            Q
           </div>
+          <h1 className="font-display font-black mb-1" style={{ fontSize: '1.75rem', color: '#EDF0FA', letterSpacing: '-0.03em' }}>
+            Create account
+          </h1>
+          <p style={{ color: 'rgba(237,240,250,0.5)' }}>Start your learning adventure today</p>
         </div>
-
-        <h1 className="font-display font-black mb-1" style={{ fontSize: '2rem', color: '#EDF0FA', letterSpacing: '-0.03em' }}>
-          Create account
-        </h1>
-        <p className="mb-8" style={{ color: 'rgba(237,240,250,0.5)' }}>Start your learning adventure today</p>
 
         {/* Google */}
         {googleClientId && (

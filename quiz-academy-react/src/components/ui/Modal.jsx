@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Button from './Button'
 
@@ -38,7 +39,7 @@ export default function Modal({ open, onClose, title, icon, children, maxWidth =
     return () => document.removeEventListener('keydown', handle)
   }, [open, onClose])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -70,7 +71,8 @@ export default function Modal({ open, onClose, title, icon, children, maxWidth =
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 
@@ -99,7 +101,7 @@ export function Overlay({ open, onClose, children, maxWidth = '480px' }) {
     return () => document.removeEventListener('keydown', handle)
   }, [open, onClose])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -129,6 +131,7 @@ export function Overlay({ open, onClose, children, maxWidth = '480px' }) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

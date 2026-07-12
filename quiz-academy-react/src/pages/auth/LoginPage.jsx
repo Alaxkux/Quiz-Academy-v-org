@@ -169,19 +169,19 @@ export default function LoginPage() {
         <motion.div className="relative w-full" style={{ maxWidth: 420 }}
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 
-          {/* Mobile brand */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white"
-              style={{ background: 'linear-gradient(135deg,#6C8EFF,#4DFFC3)', fontSize: 16 }}>Q</div>
-            <span className="font-bold text-lg" style={{ color: '#EDF0FA' }}>Quiz Academy</span>
+          {/* Brand — centered icon badge above heading, matching reference layout */}
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="w-14 h-14 rounded-3xl flex items-center justify-center font-black text-white text-2xl mb-4"
+              style={{ background: 'linear-gradient(135deg,#6C8EFF,#4DFFC3)', boxShadow: '0 8px 24px rgba(108,142,255,0.35)' }}>
+              Q
+            </div>
+            <h1 className="font-display font-black mb-1" style={{ fontSize: '1.75rem', color: '#EDF0FA', letterSpacing: '-0.03em' }}>
+              Welcome back
+            </h1>
+            <p style={{ color: 'rgba(237,240,250,0.5)', fontSize: '1rem' }}>
+              Continue your learning journey
+            </p>
           </div>
-
-          <h1 className="font-display font-black mb-1" style={{ fontSize: '2rem', color: '#EDF0FA', letterSpacing: '-0.03em' }}>
-            Welcome back
-          </h1>
-          <p className="mb-8" style={{ color: 'rgba(237,240,250,0.5)', fontSize: '1rem' }}>
-            Continue your learning journey
-          </p>
 
           {/* Google */}
           {googleClientId && (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Trash2, Users, BookOpen, Lock, KeyRound, Eye, EyeOff, RefreshCw, Crown } from 'lucide-react'
@@ -210,7 +211,7 @@ function ChangePinModal({ onClose }) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={e => e.target === e.currentTarget && onClose()}
@@ -278,7 +279,8 @@ function ChangePinModal({ onClose }) {
           </Button>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

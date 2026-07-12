@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import { useScrollLock } from './Modal'
 
 /**
  * Samsung-style popup — rounded, centered, clean
@@ -13,24 +15,7 @@ export default function SamsungPopup({
   open, onClose, title, icon, children,
   maxWidth = '340px', hideClose = false, autoDismiss = 0,
 }) {
-  // Scroll lock
-  useEffect(() => {
-    if (!open) return
-    const y = window.scrollY
-    document.body.style.overflow  = 'hidden'
-    document.body.style.position  = 'fixed'
-    document.body.style.top       = `-${y}px`
-    document.body.style.left      = '0'
-    document.body.style.right     = '0'
-    return () => {
-      document.body.style.overflow  = ''
-      document.body.style.position  = ''
-      document.body.style.top       = ''
-      document.body.style.left      = ''
-      document.body.style.right     = ''
-      window.scrollTo(0, y)
-    }
-  }, [open])
+  useScrollLock(open)
 
   // Auto dismiss
   useEffect(() => {
@@ -47,7 +32,7 @@ export default function SamsungPopup({
     return () => document.removeEventListener('keydown', fn)
   }, [open])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -105,7 +90,8 @@ export default function SamsungPopup({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 

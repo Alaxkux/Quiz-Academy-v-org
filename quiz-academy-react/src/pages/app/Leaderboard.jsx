@@ -14,25 +14,27 @@ export default function Leaderboard() {
   const { user }       = useAuth()
   const [allUsers, setAllUsers] = useState([])
   const [tab,      setTab]      = useState('alltime')
+  const [scope,    setScope]    = useState('all') // 'all' | 'friends'
   const [loading,  setLoading]  = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  const fetchLeaderboard = useCallback(async () => {
+  const fetchLeaderboard = useCallback(async (s = scope) => {
     try {
-      const data = await authApi.getLeaderboard()
+      const data = await authApi.getLeaderboard(s)
       setAllUsers(data.users || [])
     } catch {
       setAllUsers([])
     }
-  }, [])
+  }, [scope])
 
   useEffect(() => {
-    fetchLeaderboard().finally(() => setLoading(false))
-  }, [fetchLeaderboard])
+    setLoading(true)
+    fetchLeaderboard(scope).finally(() => setLoading(false))
+  }, [scope])
 
   async function handleRefresh() {
     setRefreshing(true)
-    await fetchLeaderboard()
+    await fetchLeaderboard(scope)
     setRefreshing(false)
   }
 
@@ -75,12 +77,32 @@ export default function Leaderboard() {
         ))}
       </div>
 
+      {/* Scope — everyone vs friends only */}
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+        {[{ id:'all', label:'🌍 Everyone' },{ id:'friends', label:'🤝 Friends' }].map(s => (
+          <button key={s.id} onClick={() => setScope(s.id)}
+            className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+            style={{
+              background: scope === s.id ? 'var(--bg1)'    : 'transparent',
+              color:      scope === s.id ? 'var(--accent)'  : 'var(--t3)',
+              border:     scope === s.id ? '1px solid var(--border)' : '1px solid transparent',
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {sorted.length === 0 ? (
         <div className="rounded-2xl p-12 text-center"
           style={{ background: 'var(--bg1)', border: '1px solid var(--border)' }}>
           <div className="text-5xl mb-3">🏆</div>
-          <h3 className="font-display font-bold text-base text-primary mb-2">No rankings yet</h3>
-          <p className="text-sm text-secondary">Complete a quiz to appear on the leaderboard!</p>
+          <h3 className="font-display font-bold text-base text-primary mb-2">
+            {scope === 'friends' ? 'No friends on the board yet' : 'No rankings yet'}
+          </h3>
+          <p className="text-sm text-secondary">
+            {scope === 'friends' ? 'Add some friends to compare scores here.' : 'Complete a quiz to appear on the leaderboard!'}
+          </p>
         </div>
       ) : (
         <>

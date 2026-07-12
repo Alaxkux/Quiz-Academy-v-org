@@ -38,10 +38,6 @@ export const authApi = {
     })
   },
 
-  async getLeaderboard() {
-    return client.get('/auth/leaderboard')
-  },
-
   async forgotPassword(email) {
     return client.post('/auth/forgot-password', { email })
   },
@@ -83,5 +79,17 @@ export const authApi = {
 
   async sendToFriend(friendId, type, data) {
     return client.post('/auth/friends/send', { friendId, type, data })
+  },
+
+  async getPublicProfile(userId) {
+    return client.get(`/auth/users/${userId}/public-profile`)
+  },
+
+  async getFriendsActivity() {
+    return client.get('/auth/friends/activity')
+  },
+
+  async getLeaderboard(scope = 'all') {
+    return client.get(`/auth/leaderboard?scope=${scope}`)
   },
 }

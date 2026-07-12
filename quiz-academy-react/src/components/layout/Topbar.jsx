@@ -10,7 +10,7 @@ import { getStoredTheme } from '../../data/themes'
 import { getLevelInfo } from '../../data/levels'
 import Avatar from '../ui/Avatar'
 
-function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
+function NotifDropdown({ open, notifications, onDismiss, onClearAll, onNotifClick }) {
   return (
     <AnimatePresence>
       {open && (
@@ -36,7 +36,8 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
               </div>
             ) : (
               notifications.map(n => (
-                <div key={n.id} className="flex items-start gap-2.5 px-4 py-3 border-b hover:opacity-80 transition-opacity"
+                <div key={n.id} onClick={() => onNotifClick(n)}
+                  className="flex items-start gap-2.5 px-4 py-3 border-b hover:opacity-80 transition-opacity cursor-pointer"
                   style={{ borderColor: 'var(--border)' }}>
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 text-xs"
                     style={{ background: n.type === 'success' ? 'var(--green-dim)' : n.type === 'warning' ? 'var(--gold-dim)' : n.type === 'error' ? 'var(--red-dim)' : 'var(--accent-dim)' }}>
@@ -46,7 +47,7 @@ function NotifDropdown({ open, notifications, onDismiss, onClearAll }) {
                     <p className="text-xs text-primary leading-snug">{n.message}</p>
                     <p className="text-xs text-muted mt-0.5">{n.timestamp}</p>
                   </div>
-                  <button onClick={() => onDismiss(n.id)} className="text-muted hover:text-red transition-colors flex-shrink-0 mt-0.5">
+                  <button onClick={e => { e.stopPropagation(); onDismiss(n.id) }} className="text-muted hover:text-red transition-colors flex-shrink-0 mt-0.5">
                     <X size={12} />
                   </button>
                 </div>
@@ -114,6 +115,28 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
 
   const levelInfo   = user ? getLevelInfo(user.stats?.totalXP || 0) : null
   const streak      = user?.stats?.streak || 0
+
+  // Route each notification to the most useful place based on its type —
+  // friend-social ones go to that person's profile, content shares jump
+  // straight into the relevant quiz, everything else just closes the panel.
+  function handleNotifClick(n) {
+    const kind   = n.data?.type
+    const fromId = n.data?.from
+    if (['request', 'accepted', 'wave', 'greet', 'congrats', 'achievement'].includes(kind) && fromId) {
+      navigate(`/users?openProfile=${fromId}`)
+    } else if ((kind === 'quiz' || kind === 'score' || kind === 'challenge')) {
+      if (n.data?.category) {
+        navigate('/quiz/config', { state: { category: n.data.category, title: n.data.category } })
+      } else {
+        navigate('/categories')
+      }
+    } else if (kind === 'level' || n.type === 'level') {
+      navigate('/achievements')
+    } else if (kind === 'streak' || n.type === 'streak') {
+      navigate('/dashboard')
+    }
+    setNotifOpen(false)
+  }
 
   useEffect(() => {
     function handle(e) {
@@ -242,6 +265,7 @@ export default function Topbar({ onMenuClick, onToggleCollapse, sidebarCollapsed
             notifications={notifications}
             onDismiss={id => dismissNotification(id)}
             onClearAll={() => { clearNotifications(); setNotifOpen(false) }}
+            onNotifClick={handleNotifClick}
           />
         </div>
 
